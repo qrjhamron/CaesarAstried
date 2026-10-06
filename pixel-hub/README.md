@@ -6,7 +6,7 @@ English, Indonesia and ไทย can be changed live, including the Loot To Forg
 
 ```lua
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/qrjhamron/CaesarAstried/main/pixel-hub/pixel-hub-ui.lua"))()
-local Window = Library:CreateWindow({ Title = "PixeL UI", Navigation = "Chunky", Theme = "Citadel", AnimationIntensity = "Lively", Language = "Auto" })
+local Window = Library:CreateWindow({ Title = "PixeL UI", Navigation = "Chunky", Theme = "Studio", AnimationIntensity = "Lively", Language = "Auto" })
 Window:AddSettingsTab()
 ```
 
@@ -14,20 +14,19 @@ The URL loader requires `game:HttpGet` and `loadstring`. In Roblox Studio, impor
 
 ## PixeL UI 1.2
 
-- Chunky block tabs in one horizontally scrolling row: raised faces, deep shadows, pixel icon badges, a selected marker, hover lift and press animation. Swipe on touch, mouse wheel, scrollbar or previous/next buttons. The selected tab scrolls into view automatically, and changing language recalculates each block width.
-- Citadel theme: ink-blue panels, gold trim, castle battlements, panel rivets and sharper block edges. Loot To Forge uses castle, sword, forge, coinbag, crown, tower, chest and compass icons.
-- Initial window size stays compact at 760 × 520 with a 22px mascot and 20px title. Horizontal tabs keep their labels at all screen widths.
-- Smooth loading progress with a robot mascot lasts approximately 7.5 seconds; actual setup may take longer. `IntroDuration` adjusts the duration. Reduced Motion / `Intro = false` bypass the animated wait.
-- `Navigation = "Chunky"` is the default; `Navigation = "Sidebar"` selects the earlier compact sidebar. Resizing clamps the window to the available viewport.
-
-
+- Studio palette, quieter horizontal block tabs, compact icons and one brand title. Footer metrics replace the overlapping header watermark.
+- Responsive content columns now depend on available width, including wide touch screens. Short headers hide descriptions; title and search have independent space.
+- Compact cards: 68px numeric / 100px multiline. Navigation height: 56–60px. Initial window stays 760 × 520 with a 22px header mascot.
+- Original Pixel Assembly opening: assembling monogram, four startup phases, progress bar and percentage. Nominal duration is 7.5 seconds, with actual setup awaited; `IntroDuration`, `Intro = false` and Reduced Motion remain supported.
+- `Navigation = "Chunky"` is the default; `Navigation = "Sidebar"` keeps the earlier sidebar. Particles and footer metrics are opt-in through settings / `Particles = true` / `Watermark = true`.
+- [Research and design rationale (Indonesia)](RESEARCH-DESIGN.md).
 - 75 newly authored 16×16 semantic icons; **96 built-in icons total**. Anvil, hammer, ore, equipment, boss, tower, chest, potion, rune, controls, settings, and four robot poses. See [icon-catalog.md](icon-catalog.md).
 - Read-only dashboard cards with live values and explicit Running / Waiting / Off / Success / Error states.
-- Pocket Arcade identity and a new Workshop palette for Loot To Forge. Contextual accents follow the selected tab; semantic status colors remain meaningful.
+- Contextual accents follow the selected tab; semantic status colors remain meaningful. Studio is the current default, and earlier palettes remain available.
 - Robot mascot reacts to work, success and error; decorative idle motion respects animation settings.
 - Explicit result feedback for confirmed forge responses and successful config saves. A click only indicates interaction.
 - Mini mode displays current task, enabled-feature count and All Off when a callback is configured. All Off switches configured toggles off; it does not cancel an already executing game operation.
-- Narrow-screen/touch navigation drawer, one-column touch content, a separate full-width search row, and centered viewport-constrained pickers.
+- Width-based content columns, separate narrow-screen search, and centered viewport-constrained pickers. The optional Sidebar navigation retains its touch drawer.
 - Reduced Motion respects the Roblox setting by default; manual override and intensity controls remain available.
 
 ## Localization API
@@ -61,7 +60,7 @@ Use `Multiline = true` on cards with longer values. `Library:GetIcons()` returns
 
 ## Loot To Forge
 
-[loot-to-forge.lua](loot-to-forge.lua) uses this library URL, the Citadel theme, a session dashboard, semantic icons, shared All Off and the mini HUD. Community links and changelog moved into Settings. Rejoin loads the published updated script. The window, notifications and website identify Jeaneism / PixeL UI. Existing option/config IDs are preserved.
+[loot-to-forge.lua](loot-to-forge.lua) uses this library URL, the Studio theme, a session dashboard, semantic icons, shared All Off and the mini HUD. Community links and changelog moved into Settings. Rejoin loads the published updated script. The window, notifications and website identify Jeaneism / PixeL UI. Existing option/config IDs are preserved.
 
 ## Validation
 
