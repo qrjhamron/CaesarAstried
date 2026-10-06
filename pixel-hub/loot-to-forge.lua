@@ -276,7 +276,8 @@ Jeaneism.State = {
         GodMode = false,
         KeepOre = false,
         CollectOre = false,
-        FarmWorkers = 4,
+        FarmWorkers = 24,
+        FarmAllOres = true,
         Stage = nil,
         CollectRarities = {},
         KillAura = false,
@@ -857,64 +858,105 @@ function Jeaneism.Stage.Best()
     return Jeaneism.Stage.List()[1]
 end
 
--- Own one drop batch until every in-flight pickup has returned.
+-- Keep failed/unclaimed batches so retries never open a new stage over pending loot.
 function Jeaneism.Stage.Collect(stageId, rarities, keepRunning)
     local function active()
         return State.Alive and (not keepRunning or keepRunning())
     end
     while State.CollectBusy do
         if not active() then return end
-        task.wait(0.04)
+        task.wait(0.01)
     end
     if not active() or not stageId then return end
     State.CollectBusy = true
     local ok, result = pcall(function()
-        local drops = Jeaneism.Util.Remote("Stage", "StageFinishedRF"):InvokeServer(stageId)
-        if type(drops) ~= "table" or not active() then return end
-        local ores, stones = {}, {}
-        for uuid, drop in pairs(drops) do
-            if type(drop) == "table" then
-                table.insert(stones, uuid)
-            elseif not rarities or rarities[Jeaneism.Ore.Rarity(drop)] then
-                table.insert(ores, uuid)
+        local batch = State.OreBatch
+        if not batch then
+            local drops = Jeaneism.Util.Remote("Stage", "StageFinishedRF"):InvokeServer(stageId)
+            if type(drops) ~= "table" then error("Stage did not return a loot batch", 0) end
+            batch = {stage=stageId, ores={}, stones={}, done={}}
+            for uuid, drop in pairs(drops) do
+                if type(drop) == "table" then
+                    table.insert(batch.stones, uuid)
+                elseif not rarities or rarities[Jeaneism.Ore.Rarity(drop)] then
+                    table.insert(batch.ores, uuid)
+                end
+            end
+            State.OreBatch = batch
+        end
+        if not active() then return end
+        if #batch.stones > 0 then
+            local pickStone = Jeaneism.Util.Remote("Stage", "GetEnhantStoneRE")
+            for _, uuid in ipairs(batch.stones) do
+                if not active() then return end
+                if not batch.done[uuid] then
+                    pickStone:FireServer(uuid)
+                    batch.done[uuid] = true
+                end
             end
         end
-        if #stones > 0 then
-            local pickStone = Jeaneism.Util.Remote("Stage", "GetEnhantStoneRE")
-            for _, uuid in ipairs(stones) do
-                if not active() then return end
-                pickStone:FireServer(uuid)
-            end
+        local ores = {}
+        for _, uuid in ipairs(batch.ores) do
+            if not batch.done[uuid] then table.insert(ores, uuid) end
         end
         if #ores > 0 then
             local pickOre = Jeaneism.Util.Remote("Stage", "GetOreRF")
-            local workers = math.min(#ores, math.clamp(math.floor(tonumber(State.Opt.FarmWorkers) or 4), 1, 4))
+            local workers = math.min(#ores, math.clamp(math.floor(tonumber(State.Opt.FarmWorkers) or 24), 1, 32))
             local nextOre, pending, failure = 1, workers, nil
             for _ = 1, workers do
                 task.spawn(function()
                     local worked, err = pcall(function()
-                        while active() and not failure do
+                        while active() do
                             local index = nextOre
                             nextOre += 1
                             if index > #ores then break end
-                            pickOre:InvokeServer(ores[index])
+                            local uuid = ores[index]
+                            local lastError
+                            for attempt = 1, 3 do
+                                if not active() then break end
+                                local accepted, response = pcall(pickOre.InvokeServer, pickOre, uuid)
+                                if accepted and response ~= false then
+                                    batch.done[uuid] = true
+                                    lastError = nil
+                                    break
+                                end
+                                lastError = accepted and "Ore pickup was rejected" or response
+                                if attempt < 3 and active() then task.wait(0.04 * attempt) end
+                            end
+                            if lastError then failure = failure or lastError end
                         end
                     end)
-                    if not worked then failure = err end
+                    if not worked then failure = failure or err end
                     pending -= 1
                 end)
             end
-            -- Do not close a batch or release ownership while a pickup is pending.
-            while pending > 0 do task.wait(0.01) end
+            -- Wait for in-flight requests even after disable; no overlapping batches.
+            while pending > 0 do task.wait(0.001) end
             if failure then error(failure, 0) end
         end
-        if active() then Jeaneism.Util.Remote("Stage", "ClaimedAllOreRE"):FireServer() end
+        if not active() then return end
+        -- Failed pickups never reach this claim; the next call resumes their UUIDs.
+        Jeaneism.Util.Remote("Stage", "ClaimedAllOreRE"):FireServer()
+        State.OreBatch = nil
     end)
     State.CollectBusy = false
     if not ok then error(result, 0) end
 end
 
+function Jeaneism.Stage.StartCollecting()
+    Jeaneism.Scheduler.StartLoop("CollectOre", function()
+        if State.Lock then return end
+        local ok, err = Jeaneism.Util.Exclusive("Farm", function()
+            Jeaneism.Stage.Collect(State.Opt.Stage or Jeaneism.Stage.Best(),
+                not State.Opt.FarmAllOres and State.Opt.CollectRarities or nil,
+                function() return State.Opt.CollectOre end)
+        end)
+        if not ok and err ~= nil then error(err, 0) end
+    end, function() return 0.04 end)
+end
+
 function Jeaneism.Stage.FarmStones(stageId)
+    if State.OreBatch then Jeaneism.Stage.Collect(stageId, nil) end
     local finished = Jeaneism.Util.Remote("Stage", "StageFinishedRF")
     local pickStone = Jeaneism.Util.Remote("Stage", "GetEnhantStoneRE")
     Jeaneism.Util.WaitAll(Config.StoneWorkers, function()
@@ -2292,8 +2334,10 @@ function Jeaneism.Session.Bind()
 end
 
 Jeaneism.Scheduler.Jobs = {
-    { key = "MaxGear", every = 0, run = function() Jeaneism.Gear.MaxStep() end },
-    { key = "CollectOre", every = 0, run = function() Jeaneism.Stage.Collect(State.Opt.Stage or Jeaneism.Stage.Best(), State.Opt.CollectRarities, function() return State.Opt.CollectOre and not State.Lock end) end },
+    { key = "MaxGear", every = 0, run = function()
+        local ok, err = Jeaneism.Util.Exclusive("Gear", Jeaneism.Gear.MaxStep)
+        if not ok and err ~= nil then error(err, 0) end
+    end },
     { key = "AutoForge", every = 0, run = function() Jeaneism.Forge.Step() end },
     { key = "AutoEquip", every = Config.EquipInterval, run = function() Jeaneism.Gear.EquipBest() end },
     { key = "AutoSell", every = Config.SellInterval, run = function() Jeaneism.Sell.Run(Jeaneism.Data.Get()) end },
@@ -2900,8 +2944,11 @@ local function BuildInterface()
     local function BuildFarm(tab)
         local stageBox = tab:AddLeftGroupbox(T("Stage", "ด่าน"), "map-scroll")
         Pick(stageBox, "Stage", T("Stage", "ด่าน"), T("Any stage, no unlock needed", "เลือกด่านไหนก็ได้ ไม่ต้องปลดล็อก"), Jeaneism.Stage.List)
-        Feature(stageBox, "CollectOre", T("Auto Collect Ore", "เก็บแร่อัตโนมัติ"), T("Clears the stage and collects its ores nonstop", "เคลียร์ด่านแล้วเก็บแร่ไม่หยุด"))
-        stageBox:AddSlider("FarmWorkers", {Text=Library:T("Ore pickup workers", "จำนวนตัวเก็บแร่", "Worker pengambil ore"), Min=1, Max=4, Default=opt.FarmWorkers, Rounding=0, Callback=function(value) opt.FarmWorkers=value end})
+        Feature(stageBox, "CollectOre", T("Auto Collect Ore", "เก็บแร่อัตโนมัติ"), Library:T("Fast parallel pickups; retries unfinished ore before the next round", "เก็บแร่พร้อมกันและลองแร่ที่ยังไม่สำเร็จก่อนรอบใหม่", "Pickup paralel cepat; retry ore yang gagal sebelum ronde baru"), function(value)
+            if value then Jeaneism.Stage.StartCollecting() end
+        end)
+        stageBox:AddToggle("FarmAllOres", {Text=Library:T("Collect all ore (ignore rarity filter)", "เก็บแร่ทั้งหมด (ไม่กรองความหายาก)", "Ambil semua ore (abaikan filter rarity)"), Default=opt.FarmAllOres, Callback=function(value) opt.FarmAllOres=value end})
+        stageBox:AddSlider("FarmWorkers", {Text=Library:T("Ore pickup workers", "จำนวนตัวเก็บแร่", "Worker pengambil ore"), Min=1, Max=32, Default=opt.FarmWorkers, Rounding=0, Callback=function(value) opt.FarmWorkers=value end})
         MultiSelect(stageBox, "CollectRarities", T("Ore Rarity Filter", "กรอง rarity แร่"), T("Only collect these rarities", "เก็บเฉพาะ rarity ที่เลือก"), rarityNames)
 
         local combatBox = tab:AddLeftGroupbox(T("Combat", "ต่อสู้"), "sword")
