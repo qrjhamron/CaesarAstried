@@ -6,7 +6,7 @@ English, Indonesia and ไทย can be changed live, including the Loot To Forg
 
 ```lua
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/qrjhamron/CaesarAstried/main/pixel-hub/pixel-hub-ui.lua"))()
-local Window = Library:CreateWindow({ Title = "PixeL UI", Theme = "Workshop", AnimationIntensity = "Lively", Language = "Auto" })
+local Window = Library:CreateWindow({ Title = "PixeL UI", Navigation = "Chunky", Theme = "Citadel", AnimationIntensity = "Lively", Language = "Auto" })
 Window:AddSettingsTab()
 ```
 
@@ -14,9 +14,11 @@ The URL loader requires `game:HttpGet` and `loadstring`. In Roblox Studio, impor
 
 ## PixeL UI 1.2
 
-- Original sidebar navigation restored: compact 32px desktop / 40px touch tabs with 24px icons. Initial window size is 760 × 520, sidebar 172px, logo 22px and title 20px. Mobile retains the original drawer.
+- Chunky block tabs in one horizontally scrolling row: raised faces, deep shadows, pixel icon badges, a selected marker, hover lift and press animation. Swipe on touch, mouse wheel, scrollbar or previous/next buttons. The selected tab scrolls into view automatically, and changing language recalculates each block width.
+- Citadel theme: ink-blue panels, gold trim, castle battlements, panel rivets and sharper block edges. Loot To Forge uses castle, sword, forge, coinbag, crown, tower, chest and compass icons.
+- Initial window size stays compact at 760 × 520 with a 22px mascot and 20px title. Horizontal tabs keep their labels at all screen widths.
 - Smooth loading progress with a robot mascot lasts approximately 7.5 seconds; actual setup may take longer. `IntroDuration` adjusts the duration. Reduced Motion / `Intro = false` bypass the animated wait.
-- Sidebar navigation is the default. The previous top navigation redesign has been removed. Resizing clamps the window to the available viewport.
+- `Navigation = "Chunky"` is the default; `Navigation = "Sidebar"` selects the earlier compact sidebar. Resizing clamps the window to the available viewport.
 
 
 - 75 newly authored 16×16 semantic icons; **96 built-in icons total**. Anvil, hammer, ore, equipment, boss, tower, chest, potion, rune, controls, settings, and four robot poses. See [icon-catalog.md](icon-catalog.md).
@@ -59,7 +61,7 @@ Use `Multiline = true` on cards with longer values. `Library:GetIcons()` returns
 
 ## Loot To Forge
 
-[loot-to-forge.lua](loot-to-forge.lua) uses this library URL, the Workshop theme, a session dashboard, semantic icons, shared All Off and the mini HUD. Community links and changelog moved into Settings. Rejoin loads the published updated script. The window, notifications and website identify Jeaneism / PixeL UI. Existing option/config IDs are preserved.
+[loot-to-forge.lua](loot-to-forge.lua) uses this library URL, the Citadel theme, a session dashboard, semantic icons, shared All Off and the mini HUD. Community links and changelog moved into Settings. Rejoin loads the published updated script. The window, notifications and website identify Jeaneism / PixeL UI. Existing option/config IDs are preserved.
 
 ## Validation
 
