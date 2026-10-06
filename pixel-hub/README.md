@@ -29,6 +29,10 @@ The URL loader requires `game:HttpGet` and `loadstring`. In Roblox Studio, impor
 - Width-based content columns, separate narrow-screen search, and centered viewport-constrained pickers. The optional Sidebar navigation retains its touch drawer.
 - Reduced Motion respects the Roblox setting by default; manual override and intensity controls remain available.
 
+## Ride A Pet / eL hub
+
+[ride-a-pet.lua](ride-a-pet.lua) uses a warm Field palette and a compact sidebar. The Ranch home displays delivery/loss counts and the next-wave countdown; the Hub tab contains website, updates and webhook controls. Its opening assembles an eL monogram. Game mechanics and saved option IDs are preserved.
+
 ## Localization API
 
 ```lua
