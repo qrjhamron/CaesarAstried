@@ -279,7 +279,7 @@ local State = {
     MenuKey = "LeftControl",
     ThemeName = "Arcade",
     Language = "EN",
-    UserScale = 1,
+    UserScale = 0.8,
     Touch = false,
     KeyPickers = {},
     Connections = {},
@@ -1999,6 +1999,7 @@ function Widget:Fire()
     for _, callback in ipairs(self.Changed) do
         Util.Try(callback, self.Value)
     end
+    if not self.NoSave then Configs.QueueAutoSave() end
 end
 
 function Widget:Serialize()
@@ -3340,6 +3341,7 @@ function KeyPicker:SetKey(name)
     self.Value = name
     self:Render()
     Util.Try(self.ChangedCallback, name)
+    if not self.NoSave then Configs.QueueAutoSave() end
     for _, callback in ipairs(self.Changed) do
         Util.Try(callback, name)
     end
@@ -6155,13 +6157,15 @@ function Configs.Save(name)
     if not Util.FileApi() then
         return false, Lang.Get("NoFileApi")
     end
-    local snapshot = {}
-    for idx, option in pairs(Library.Options) do
-        if not option.NoSave and option.Serialize then
-            snapshot[idx] = { Type = option.Type, Value = option:Serialize() }
+    return pcall(function()
+        local snapshot = {}
+        for idx, option in pairs(Library.Options) do
+            if not option.NoSave and option.Serialize then
+                snapshot[idx] = { Type = option.Type, Value = option:Serialize() }
+            end
         end
-    end
-    return (pcall(writefile, Configs.Path(name), HttpService:JSONEncode(snapshot)))
+        writefile(Configs.Path(name), HttpService:JSONEncode(snapshot))
+    end)
 end
 
 function Configs.Load(name)
@@ -6174,11 +6178,30 @@ function Configs.Load(name)
     if not ok or type(snapshot) ~= "table" then
         return false, Lang.Get("ConfigBroken")
     end
-    for idx, saved in pairs(snapshot) do
-        local option = Library.Options[idx]
-        if option and not option.NoSave and option.Type == saved.Type then
-            Util.Try(option.Deserialize, option, saved.Value)
+    local wasLoading = Configs.Loading
+    Configs.Loading = true
+    local failure
+    -- Apply filters/rates/UI preferences before toggles can start background work.
+    for _, toggles in ipairs({false, true}) do
+        for idx, saved in pairs(snapshot) do
+            local option = Library.Options[idx]
+            if type(saved) == "table" and option and not option.NoSave and option.Type == saved.Type
+                and (option.Type == "Toggle") == toggles then
+                local applied, reason = Util.Try(option.Deserialize, option, saved.Value)
+                if not applied then failure = failure or reason or ("Could not apply " .. tostring(idx)) end
+            end
         end
+    end
+    Configs.Loading = wasLoading
+    if failure then
+        Configs.AutoEnabled = false
+        return false, tostring(failure)
+    end
+    Configs.LastLoaded = name
+    if Configs.AutoEnabled then
+        Configs.AutoName = name
+        Configs.SetAutoload(name)
+        Configs.QueueAutoSave()
     end
     return true
 end
@@ -6221,6 +6244,62 @@ function Configs.GetAutoload()
     end
     local ok, name = pcall(readfile, path)
     return ok and type(name) == "string" and name ~= "" and name or nil
+end
+
+function Configs.FlushAutoSave()
+    if not Configs.AutoEnabled or not Configs.Dirty then return true end
+    local ok, reason = Configs.Save(Configs.AutoName)
+    if ok then
+        Configs.Dirty = false
+        Configs.SaveWarning = false
+    elseif not Configs.SaveWarning then
+        Configs.SaveWarning = true
+        Library:Notify("PixeL UI", {EN="Autosave failed: " .. tostring(reason), ID="Autosave gagal: " .. tostring(reason), TH="บันทึกอัตโนมัติไม่สำเร็จ: " .. tostring(reason)}, 5, "Warning")
+    end
+    return ok, reason
+end
+
+function Configs.QueueAutoSave()
+    if not Configs.AutoEnabled or Configs.Loading or Library.Unloaded then return end
+    Configs.Dirty = true
+    if Configs.SaveQueued then return end
+    Configs.SaveQueued = true
+    task.delay(0.35, function()
+        Configs.SaveQueued = false
+        if Library.Unloaded then return end
+        Configs.FlushAutoSave()
+    end)
+end
+
+function Configs.StartAutoSave(name)
+    if Configs.AutoEnabled then return true end
+    if not Util.FileApi() then
+        Library:Notify("PixeL UI", Lang.Get("NoFileApi"), 5, "Warning")
+        return false, Lang.Get("NoFileApi")
+    end
+    local chosen = name or Configs.GetAutoload() or "default"
+    if Util.Exists(Configs.Path(chosen)) and Configs.LastLoaded ~= chosen then
+        local ok, reason = Configs.Load(chosen)
+        if not ok then
+            -- Preserve unreadable saved data instead of replacing it with defaults.
+            Library:Notify("PixeL UI", "Autosave paused: " .. tostring(reason), 5, "Warning")
+            return false, reason
+        end
+    end
+    local linked, reason = Configs.SetAutoload(chosen)
+    if not linked then
+        Library:Notify("PixeL UI", "Autosave unavailable: " .. tostring(reason), 5, "Warning")
+        return false, reason
+    end
+    Configs.AutoName, Configs.AutoEnabled, Configs.Dirty = chosen, true, true
+    local ok, err = Configs.FlushAutoSave()
+    Util.Every(5, function()
+        if Configs.AutoEnabled and Configs.Dirty then Configs.FlushAutoSave() end
+    end)
+    if ok then
+        Library:Notify("PixeL UI", {EN="Autosave enabled · " .. chosen, ID="Autosave aktif · " .. chosen, TH="เปิดบันทึกอัตโนมัติ · " .. chosen}, 3, "Success")
+    end
+    return ok, err
 end
 
 function Configs.BuildSection(group)
@@ -6424,7 +6503,7 @@ function Library:CreateWindow(options)
         language = locale == "th" and "TH" or locale == "id" and "ID" or "EN"
     end
     State.Language = Lang.LanguageNames[language] and language or "EN"
-    State.UserScale = math.clamp(options.Scale or 1, Config.ScaleRange.Min, Config.ScaleRange.Max)
+    State.UserScale = math.clamp(tonumber(options.Scale) or 0.8, Config.ScaleRange.Min, Config.ScaleRange.Max)
     Theme.Apply(options.Theme or "Studio")
     Particles.Enabled = options.Particles == true
     Assets.Configure(Config.DefaultAssets)
@@ -6453,6 +6532,7 @@ function Library:CreateWindow(options)
             return
         end
         Util.Try(options.OnUnlocked)
+        if options.AutoSave ~= false then Configs.StartAutoSave(options.AutoSaveName) end
         Layout.Flush()
     end
     local function Reveal()
@@ -6516,6 +6596,7 @@ function Library:SetLanguage(code)
         option.Value = Lang.LanguageNames[code]
         option:Render()
     end
+    Configs.QueueAutoSave()
 end
 
 function Library:SetAnimationIntensity(value)
@@ -6612,6 +6693,10 @@ function Library:Every(interval, callback)
     Util.Every(interval, callback)
 end
 
+function Library:StartAutoSave(name)
+    return Configs.StartAutoSave(name)
+end
+
 function Library:SaveConfig(name)
     return Configs.Save(name)
 end
@@ -6639,6 +6724,8 @@ function Library:Unload()
         return
     end
     self.Unloaded = true
+    Configs.FlushAutoSave()
+    Configs.AutoEnabled = false
     for _, callback in ipairs(State.UnloadHooks) do
         Util.Try(callback)
     end
