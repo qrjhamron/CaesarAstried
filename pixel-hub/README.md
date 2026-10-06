@@ -14,9 +14,9 @@ The URL loader requires `game:HttpGet` and `loadstring`. In Roblox Studio, impor
 
 ## PixeL UI 1.2
 
-- All tabs appear immediately in a wrapped navigation bar above the content, with icons, readable labels and an active indicator. Narrow and short screens adapt the rows without a drawer.
+- Original sidebar navigation restored: compact 32px desktop / 40px touch tabs with 24px icons. Initial window size is 760 × 520, sidebar 172px, logo 22px and title 20px. Mobile retains the original drawer.
 - Smooth loading progress with a robot mascot lasts approximately 7.5 seconds; actual setup may take longer. `IntroDuration` adjusts the duration. Reduced Motion / `Intro = false` bypass the animated wait.
-- `Navigation = "Top"` is the default. `Navigation = "Sidebar"` retains the previous sidebar layout.
+- Sidebar navigation is the default. The previous top navigation redesign has been removed. Resizing clamps the window to the available viewport.
 
 
 - 75 newly authored 16×16 semantic icons; **96 built-in icons total**. Anvil, hammer, ore, equipment, boss, tower, chest, potion, rune, controls, settings, and four robot poses. See [icon-catalog.md](icon-catalog.md).
