@@ -248,6 +248,21 @@ Themes.Studio.Muted=rgb("8794A9")
 Themes.Studio.TopbarText=rgb("EDF0F5")
 Themes.Studio.AccentDark=rgb("4D9E8E")
 table.insert(Themes.Order,1,"Studio")
+-- Warm paper, pine ink and clay accents for eL hub's ranch interface.
+Themes.Field=Palette({
+    Backdrop="EAE6DC",BackdropAlt="F4F0E7",Topbar="F4F0E7",TopbarText="283C34",
+    Sidebar="E1E5D9",SidebarAlt="CDD5C5",SidebarText="283C34",SidebarMuted="67756A",
+    TabActive="476455",TabActiveText="F9F7F1",Panel="FAF8F2",PanelHeader="EEEFE5",
+    Element="F0EEE6",Hover="E3E7DA",Outline="C7CDBF",Shadow="C9C9BC",
+    Text="293C34",SubText="627168",Muted="7B887E",Track="D4D9CB",
+    Accent="476455",AccentDark="324C3D",Blue="69858B",BlueDark="4F6870",
+    Good="64866C",GoodDark="49664D",Coin="D9AE70",CoinDark="AB8250",
+    Danger="B86850",DangerDark="914D3C",Risky="BE8B53",RiskyDark="986C40",
+    Grass="91A180",GrassDark="677B59",Brick="E1E5D9",BrickDark="CDD5C5",
+    Ink="293C34",White="FAF8F2",Black="19291F",Knob="FAF8F2",
+    Cloud="FAF8F2",CloudAlpha=0.6,Decor={"Stars","▪","476455"},Particle={"▪",false,"91A180"},
+})
+table.insert(Themes.Order,1,"Field")
 Themes.Workshop = ArcadePalette("FFAE70", "192735", "283B4C", "223141")
 table.insert(Themes.Order, 1, "Workshop")
 for index, name in ipairs({ "Arcade", "Daylight", "Midnight", "Forest", "Sunset", "Frost" }) do
@@ -2764,7 +2779,7 @@ function Container:AddStatCard(info)
     selfCard.Status = Draw.Text({ Position = UDim2.fromOffset(44, 48), Size = UDim2.new(1, -54, 0, 16),
         TextTruncate = Enum.TextTruncate.AtEnd, Parent = frame }, "Desc", 10, "Muted", "")
     if info.Multiline then selfCard.Status.Position = UDim2.fromOffset(44, 76) end
-    selfCard.Item = self:Add(frame, { Height = info.Multiline and 100 or 68, Search = Lang.SearchText(info.Title) })
+    selfCard.Item = self:Add(frame, { Height = info.Multiline and 100 or 68, Width = info.Width, Search = Lang.SearchText(info.Title) })
     selfCard:SetStatus(info.Status or "Off", info.Note)
     Lang.OnChange(frame, function() selfCard:SetStatus(selfCard.StatusCode, selfCard.Note) end)
     return selfCard
@@ -3716,6 +3731,9 @@ function Window.New(options)
         Navigation = options.Navigation == "Sidebar" and "Sidebar" or "Chunky",
         SubTitle = options.SubTitle or "Jeaneism · 0x4.me",
         Owner = options.Owner or Library.Owner,
+        BrandIcon = options.BrandIcon,
+        TitleFont = options.TitleFont or "Logo",
+        FooterText = options.FooterText,
         Website = options.Website or Library.Website,
         Desired = size,
         Size = size,
@@ -3767,10 +3785,11 @@ function Window:BuildTopbar()
     self.TopbarLine = Draw.Box("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, 3), ZIndex = 3, Parent = topbar }, "Outline")
     self.Topbar = topbar
     self:BuildDecor(topbar)
-    local left = Draw.New("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -(State.Touch and 242 or 218), 1, -3), ClipsDescendants=true, ZIndex = 4, Parent = topbar })
+    local controlsWidth=State.ThemeName=="Field" and (State.Touch and 184 or 176) or (State.Touch and 220 or 196)
+    local left = Draw.New("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -(controlsWidth+22), 1, -3), ClipsDescendants=true, ZIndex = 4, Parent = topbar })
     Draw.List(left, 8, true, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
     self.Emblem = Draw.New("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Parent = left })
-    Mascot.Build(self.Emblem)
+    if self.BrandIcon then Sprite.New(self.Emblem,self.BrandIcon,22) else Mascot.Build(self.Emblem) end
     Util.Every(4, function()
         if self.Visible and not self.Minimized and not State.ReduceMotion and State.AnimationIntensity ~= "Low" then
             if Mascot.Sprite then Anim.Bump(Mascot.Sprite, 2) end
@@ -3778,7 +3797,7 @@ function Window:BuildTopbar()
     end)
     self:BuildTitle(left)
     self.SubtitlePill = self:BuildPill(left, self.SubTitle)
-    local right = Draw.New("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 0), Size = UDim2.new(0, State.Touch and 220 or 196, 1, -3), ZIndex = 4, Parent = topbar })
+    local right = Draw.New("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 0), Size = UDim2.new(0, controlsWidth, 1, -3), ZIndex = 4, Parent = topbar })
     Draw.List(right, 8, true, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Center)
     self:BuildLanguagePill(right)
     local _, minimizeFace = self:BuildTopButton(right, "Minimize", "Coin", "CoinDark", "Ink", function()
@@ -3822,8 +3841,8 @@ function Window:RenderDecor()
 end
 
 function Window:BuildTitle(parent)
-    local holder=Draw.New("Frame",{BackgroundTransparency=1,Size=UDim2.fromOffset(118,26),LayoutOrder=1,Parent=parent})
-    local label=Draw.Text({Text=self.Title,Size=UDim2.fromScale(1,1),TextTruncate=Enum.TextTruncate.AtEnd,Parent=holder},"Logo",18,"TopbarText")
+    local holder=Draw.New("Frame",{BackgroundTransparency=1,Size=UDim2.fromOffset(State.ThemeName=="Field" and 82 or 118,26),LayoutOrder=1,Parent=parent})
+    local label=Draw.Text({Text=self.Title,Size=UDim2.fromScale(1,1),TextTruncate=Enum.TextTruncate.AtEnd,Parent=holder},self.TitleFont,18,"TopbarText")
     self.Letters={label}
     self.TitleHolder=holder
 end
@@ -3844,7 +3863,7 @@ function Window:BuildPill(parent,text)
 end
 
 function Window:BuildLanguagePill(parent)
-    local pill = Draw.Box("Frame", { Size = UDim2.fromOffset(State.Touch and 120 or 104, State.Touch and 40 or 32), LayoutOrder = 1, Parent = parent }, "Shadow", "Outline", UDim.new(1, 0), 2)
+    local pill = Draw.Box("Frame", { Size = UDim2.fromOffset(State.ThemeName=="Field" and 96 or (State.Touch and 120 or 104),State.ThemeName=="Field" and 36 or (State.Touch and 40 or 32)), LayoutOrder = 1, Parent = parent }, "Shadow", "Outline", UDim.new(1, 0), 2)
     pill.BackgroundTransparency = 0.35
     local segments = {}
     for index, code in ipairs(Lang.Codes) do
@@ -3868,7 +3887,7 @@ end
 
 -- วาดไอคอนด้วยเส้น frame เพราะ glyph ✕ ของฟอนต์ในเกมแสดงผลไม่เหมือนกันทุกเครื่อง
 function Window:BuildTopButton(parent, kind, face, shade, ink, callback)
-    local size = State.Touch and 36 or 30
+    local size = State.ThemeName=="Field" and 30 or (State.Touch and 36 or 30)
     local holder, top = Draw.Block(parent, face, shade, 8, 3)
     holder.Size = UDim2.fromOffset(size, size + 1)
     holder.LayoutOrder = 2 + #parent:GetChildren()
@@ -4025,7 +4044,7 @@ function Window:SetDrawer(open)
 end
 
 function Window:ApplyAccent()
-    local token = self.ActiveTab and self.ActiveTab.ColorToken or "Accent"
+    local token = State.ThemeName=="Field" and "Accent" or (self.ActiveTab and self.ActiveTab.ColorToken or "Accent")
     for instance, map in pairs(Theme.Bound) do
         if instance:IsDescendantOf(self.Main) then
             for property, original in pairs(map) do
@@ -4047,7 +4066,7 @@ function Window:BuildGround()
         Draw.Box("Frame", { Position = UDim2.fromOffset(12 + (index - 1) * 10, 10),
             Size = UDim2.fromOffset(6, 6), Parent = ground }, Config.TitleColors[index])
     end
-    self.FooterBrand = Draw.Text({ Text = "PixeL UI " .. Library.Version .. " / Jeaneism / 0x4.me", Position = UDim2.fromOffset(60, 4),
+    self.FooterBrand = Draw.Text({ Text = self.FooterText or ("PixeL UI " .. Library.Version .. " / Jeaneism / 0x4.me"), Position = UDim2.fromOffset(60, 4),
         Size = UDim2.new(1, -100, 1, -6), TextTruncate = Enum.TextTruncate.AtEnd, Parent = ground },
         "Desc", 11, "SubText")
     self.Ground = ground
@@ -4259,7 +4278,7 @@ function Window:ApplyChrome(width, height)
     self.SubtitlePill.Visible = self.SubTitle ~= "" and width >= 700
     self:RenderDecor()
     self.Emblem.Visible = true
-    self.TitleHolder.Visible = width >= (self.MobileDrawer and 480 or 340)
+    self.TitleHolder.Visible = width >= (State.ThemeName=="Field" and 320 or (self.MobileDrawer and 480 or 340))
     local searchWidth = self.Compact and (narrow and 110 or 140) or 180
     self.SearchField.Size = UDim2.fromOffset(searchWidth, Util.Metric("Box"))
     self.HeaderTitle.Size = UDim2.new(1, -(searchWidth + 44), 0, 26)
@@ -4334,7 +4353,7 @@ function Window:SelectTab(tab)
     self:RevealBlockTab()
     Anim.Reveal(tab)
     Anim.Bump(tab.IconSlot, 3)
-    Theme.Bind(self.HeaderTitle, { TextColor3 = tab.ColorToken })
+    Theme.Bind(self.HeaderTitle, { TextColor3 = State.ThemeName=="Field" and "Text" or tab.ColorToken })
     Lang.Bind(self.HeaderTitle, tab.Name)
     Lang.Bind(self.HeaderDesc, tab.Description or "")
     local titleY = self.HeaderDesc.Visible and 10 or 11
@@ -4523,8 +4542,8 @@ function Tab:RenderButton(instant)
     Anim.Tween(self.Face, { BackgroundTransparency = faceAlpha }, duration)
     Anim.Tween(self.Shade, { BackgroundTransparency = active and 0 or 1 }, duration)
     Anim.Tween(self.Stroke, { Transparency = active and 0 or 1 }, duration)
-    Theme.Bind(self.Face, { BackgroundColor3 = self.ColorToken })
-    Theme.Bind(self.Label, { TextColor3 = active and "Ink" or "SidebarText" })
+    Theme.Bind(self.Face, { BackgroundColor3 = State.ThemeName=="Field" and "Accent" or self.ColorToken })
+    Theme.Bind(self.Label, { TextColor3 = active and (State.ThemeName=="Field" and "White" or "Ink") or "SidebarText" })
 end
 
 -- แท็บที่ซ่อนอยู่จะคำนวณ layout ตอนถูกเปิด ไม่เสียแรงตอนลากขยายหน้าต่าง
@@ -4870,7 +4889,7 @@ function Intro.Show(settings,screen)
     settings.StartTime=os.clock()
     Anim.Tween(screen,{BackgroundTransparency=0.3},0.25)
     local card,scene,scale=Intro.BuildCard(screen)
-    Intro.BuildScenery(scene)
+    Intro.BuildScenery(scene,settings)
     Draw.Text({Text=settings.Title or "PixeL UI",Position=UDim2.fromOffset(20,102),Size=UDim2.new(1,-40,0,34),TextXAlignment=Enum.TextXAlignment.Center,Parent=scene},"Logo",28,"Text")
     Draw.Text({Position=UDim2.fromOffset(20,140),Size=UDim2.new(1,-40,0,18),TextXAlignment=Enum.TextXAlignment.Center,TextTruncate=Enum.TextTruncate.AtEnd,Parent=scene},"Desc",12,"SubText",settings.SubTitle or "Jeaneism · 0x4.me")
     local track=Intro.Track(scene)
@@ -4897,15 +4916,22 @@ function Intro.BuildCard(screen)
     return card,scene,scale
 end
 
-function Intro.BuildScenery(scene)
+function Intro.BuildScenery(scene,settings)
     local mark=Draw.Box("Frame",{Name="OriginalPixelMonogram",AnchorPoint=Vector2.new(0.5,0),Position=UDim2.new(0.5,0,0,34),Size=UDim2.fromOffset(58,58),Parent=scene},"Panel",nil,9)
     local pixels={"1111100","1100110","1100110","1111100","1100000","1100000","1100000"}
+    local stepX,stepY,insetX=5,6,11
+    if settings and settings.Mark=="eL" then
+        pixels={"00000001000","01111001000","11001101000","11111101000","11000001000","01111001111","00000000000"}
+        stepX,stepY,insetX=4,6,8
+        mark.Name="eLMonogram"
+        mark.Size=UDim2.fromOffset(62,58)
+    end
     local n=0
     for y,row in ipairs(pixels) do
         for x=1,#row do
             if row:sub(x,x)=="1" then
                 n+=1
-                local pixel=Draw.Box("Frame",{Name="MarkPixel",Position=UDim2.fromOffset(11+(x-1)*5,8+(y-1)*6),Size=UDim2.fromOffset(4,5),BackgroundTransparency=1,Parent=mark},x>3 and "Coin" or "Accent")
+                local pixel=Draw.Box("Frame",{Name="MarkPixel",Position=UDim2.fromOffset(insetX+(x-1)*stepX,8+(y-1)*stepY),Size=UDim2.fromOffset(stepX-1,5),BackgroundTransparency=1,Parent=mark},x>3 and "Coin" or "Accent")
                 Anim.Tween(pixel,{BackgroundTransparency=0},0.18,"Out",0,false,n*0.025)
             end
         end
@@ -6460,6 +6486,7 @@ function Library:CreateWindow(options)
         task.spawn(Intro.Play, {
             Title = window.Title,
             SubTitle = window.SubTitle,
+            Mark = options.IntroMark,
             Duration = math.clamp(tonumber(options.IntroDuration) or Intro.Duration, 1, 20),
             Steps = {
                 { Label = { EN = steps.EN[1], ID = steps.ID[1], TH = steps.TH[1] } },
