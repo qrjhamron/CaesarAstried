@@ -3251,6 +3251,8 @@ local function BuildInterface()
 
     Library:CreateWindow({
         Title = "PixeL UI",
+        Navigation = "Top",
+        IntroDuration = 7.5,
         SubTitle = "Loot To Forge · Jeaneism · 0x4.me",
         Owner = "Jeaneism",
         Website = "https://0x4.me",
