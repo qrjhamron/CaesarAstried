@@ -14,6 +14,11 @@ The URL loader requires `game:HttpGet` and `loadstring`. In Roblox Studio, impor
 
 ## PixeL UI 1.2
 
+- All tabs appear immediately in a wrapped navigation bar above the content, with icons, readable labels and an active indicator. Narrow and short screens adapt the rows without a drawer.
+- Smooth loading progress with a robot mascot lasts approximately 7.5 seconds; actual setup may take longer. `IntroDuration` adjusts the duration. Reduced Motion / `Intro = false` bypass the animated wait.
+- `Navigation = "Top"` is the default. `Navigation = "Sidebar"` retains the previous sidebar layout.
+
+
 - 75 newly authored 16×16 semantic icons; **96 built-in icons total**. Anvil, hammer, ore, equipment, boss, tower, chest, potion, rune, controls, settings, and four robot poses. See [icon-catalog.md](icon-catalog.md).
 - Read-only dashboard cards with live values and explicit Running / Waiting / Off / Success / Error states.
 - Pocket Arcade identity and a new Workshop palette for Loot To Forge. Contextual accents follow the selected tab; semantic status colors remain meaningful.
