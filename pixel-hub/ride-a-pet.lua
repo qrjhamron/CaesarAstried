@@ -7379,7 +7379,7 @@ local function T(en, th)
     return Library:T(en, th)
 end
 
-xDTaraZ.UI = { Labels = {}, Shown = {} }
+xDTaraZ.UI = { Labels = {}, Shown = {}, Dashboard = {} }
 
 xDTaraZ.UI.WebhookEvents = {
     "Rare Egg Picked", "Rare Egg In Server", "Egg Returned", "Magma Dip", "Pet Hatched",
@@ -7584,15 +7584,27 @@ function xDTaraZ.UI.Pump()
     end
 
     local stats = State.Stats
-    local line = string.format("Delivered %d | Lost %d", stats.delivered, stats.lost)
-    if State.Status.WaveAt then
-        local left = math.max(0, math.floor(State.Status.WaveAt - os.clock()))
-        line ..= string.format(" | Wave in %d:%02d | %s", math.floor(left / 60), left % 60, State.Status.EggRate or "0/min")
-    end
+    local line = Library:Translate("Collection rate") .. ": " .. (State.Status.EggRate or "0/min")
     if shown.Rate ~= line and xDTaraZ.UI.RateLabel then
         shown.Rate = line
         xDTaraZ.UI.RateLabel:SetText(line)
     end
+    local cards=xDTaraZ.UI.Dashboard
+    if cards.Delivered then
+        local values={Delivered=stats.delivered or 0,Lost=stats.lost or 0}
+        local wave=State.Status.WaveAt and math.max(0,math.floor(State.Status.WaveAt-os.clock())) or nil
+        values.Wave=wave and string.format("%d:%02d",math.floor(wave/60),wave%60) or "—"
+        for key,value in pairs(values) do
+            if shown["Card"..key]~=value then shown["Card"..key]=value;cards[key]:SetValue(value) end
+        end
+        cards.Delivered:SetStatus((stats.delivered or 0)>0 and "Success" or "Off")
+        cards.Lost:SetStatus((stats.lost or 0)>0 and "Error" or "Off")
+        cards.Wave:SetStatus(wave and "Waiting" or "Off")
+        local active=0
+        for _,job in pairs(xDTaraZ.Options) do if job==true then active+=1 end end
+        Library.Window:SetSessionStatus(State.Status.Eggs or "Idle",active,active>0 and "Running" or "Off")
+    end
+
 end
 
 function xDTaraZ.UI.Gate()
@@ -7609,26 +7621,30 @@ function xDTaraZ.UI.Gate()
 end
 
 function xDTaraZ.UI.Home(window)
-    local tab = window:AddTab(T("Home", "หน้าแรก"), "castle-gate", T("Status and full auto", "สถานะและโหมดอัตโนมัติ"))
+    local tab=window:AddTab(T("Ranch","ฟาร์ม"),"forest-tree",T("Egg routes, deliveries and your next wave","เส้นทางไข่ การส่ง และคลื่นถัดไป"))
+    local route=tab:AddLeftGroupbox(T("Egg route","เส้นทางไข่"),"compass")
+    xDTaraZ.UI.Status(route,"Eggs","Egg farm is off")
+    local cards=xDTaraZ.UI.Dashboard
+    cards.Delivered=route:AddStatCard({Title=T("Delivered","ส่งแล้ว"),Value=0,Icon="check",Status="Off",Width=0.5})
+    route:SameLine()
+    cards.Lost=route:AddStatCard({Title=T("Lost","สูญหาย"),Value=0,Icon="warning",Status="Off"})
+    cards.Wave=route:AddStatCard({Title=T("Next wave","คลื่นถัดไป"),Value="—",Icon="clock",Status="Waiting"})
+    xDTaraZ.UI.RateLabel=route:AddLabel(T("Waiting for the next wave","รอคลื่นถัดไป"),true)
 
-    local status = tab:AddLeftGroupbox(T("Status", "สถานะ"), "info")
-    xDTaraZ.UI.Status(status, "Eggs", "Egg farm is off")
-    xDTaraZ.UI.RateLabel = status:AddLabel("Delivered 0 | Lost 0 | Wave in 0:00 | 0/min")
-    xDTaraZ.UI.Status(status, "Economy", "Cash: waiting")
+    local quick=tab:AddLeftGroupbox(T("Actions","การทำงาน"),"cursor")
+    quick:AddButton({Text=T("Collect Eggs Now","เก็บไข่เดี๋ยวนี้"),Style="Primary",Func=xDTaraZ.UI.Detach("collect now",xDTaraZ.Eggs.CollectNow)})
+    quick:AddButton({Text=T("Return Home","กลับบ้าน"),Func=xDTaraZ.UI.Detach("return home",xDTaraZ.Teleport.Home)})
 
-    local quick = tab:AddLeftGroupbox(T("Quick", "ด่วน"), "bomb")
-    quick:AddButton({ Text = T("Collect Eggs Now", "เก็บไข่เดี๋ยวนี้"), Style = "Primary", Func = xDTaraZ.UI.Detach("collect now", xDTaraZ.Eggs.CollectNow) })
-    quick:AddButton({ Text = T("Return Home", "กลับบ้าน"), Func = xDTaraZ.UI.Detach("return home", xDTaraZ.Teleport.Home) })
+    local kaitun=tab:AddRightGroupbox(T("Auto pilot","อัตโนมัติ"),"gamepad")
+    xDTaraZ.UI.Toggle(kaitun,"Kaitun",{Text=T("Kaitun","ไก่ตัน"),Description=T("Plays the account for you, from eggs to rebirth","เล่นแทนทั้งบัญชี ตั้งแต่ไข่จนถึงรีเบิร์ธ")})
+    xDTaraZ.UI.Status(kaitun,"Kaitun","Off")
+    local income=tab:AddRightGroupbox(T("Ranch income","รายได้ฟาร์ม"),"coin-stack")
+    xDTaraZ.UI.Status(income,"Economy","Cash: waiting")
+end
 
-    local kaitun = tab:AddLeftGroupbox(T("Kaitun", "ไก่ตัน"), "star")
-    xDTaraZ.UI.Toggle(kaitun, "Kaitun", {
-        Text = T("Kaitun", "ไก่ตัน"),
-        Description = T("Plays the account for you, from eggs to rebirth", "เล่นแทนทั้งบัญชี ตั้งแต่ไข่จนถึงรีเบิร์ธ"),
-    })
-    xDTaraZ.UI.Status(kaitun, "Kaitun", "Off")
-
-    xDTaraZ.UI.Webhook(tab:AddLeftGroupbox(T("Discord Webhook", "แจ้งเตือนดิสคอร์ด"), "bell"))
-
+function xDTaraZ.UI.HubDetails(window)
+    local tab=window:AddTab(T("Hub","ฮับ"),"link-chain",T("Website, updates and notifications","เว็บไซต์ อัปเดต และการแจ้งเตือน"))
+    xDTaraZ.UI.Webhook(tab:AddLeftGroupbox(T("Discord Webhook","แจ้งเตือนดิสคอร์ด"),"notification"))
     local discord = tab:AddRightGroupbox(T("Website", "เว็บไซต์"), "link")
     discord:AddLabel(Config.Website)
     discord:AddButton({ Text = T("Copy Website", "คัดลอกเว็บไซต์"), Func = function()
@@ -7893,6 +7909,7 @@ local function BuildTabs()
     window:AddTabSection(T("Misc", "อื่นๆ"))
     try("ui teleport", xDTaraZ.UI.TeleportTab, window)
     try("ui player", xDTaraZ.UI.PlayerTab, window)
+    try("ui hub", xDTaraZ.UI.HubDetails, window)
     try("ui settings", window.AddSettingsTab, window)
 
     try("ui floats", xDTaraZ.Move.BuildFloats, xDTaraZ.UI.Floats)
@@ -8088,20 +8105,44 @@ function xDTaraZ.Boot()
         ["Cash: waiting"] = "Uang: menunggu",
     })
 
+    Library:RegisterTranslations("ID", {
+        ["Ranch"] = "Ranch",
+        ["Egg routes, deliveries and your next wave"] = "Rute telur, pengiriman, dan gelombang berikutnya",
+        ["Egg route"] = "Rute telur",
+        ["Delivered"] = "Terkirim",
+        ["Lost"] = "Hilang",
+        ["Next wave"] = "Gelombang berikutnya",
+        ["Waiting for the next wave"] = "Menunggu gelombang berikutnya",
+        ["Actions"] = "Aksi",
+        ["Auto pilot"] = "Otomatisasi",
+        ["Ranch income"] = "Penghasilan ranch",
+        ["Your ranch, in one place"] = "Ranch kamu dalam satu tampilan",
+        ["Use Egg Farm for collecting, Hatch for planting, and Pets for your ranch."] = "Gunakan Farm telur untuk mengambil, Penetasan untuk menempatkan, dan Pet untuk mengelola ranch.",
+        ["Hub"] = "Hub",
+        ["Website, updates and notifications"] = "Website, pembaruan, dan notifikasi",
+    })
+
+    Library:RegisterTranslations("ID",{["Collection rate"]="Laju pengumpulan"})
+    Library:RegisterTranslations("TH",{["Collection rate"]="อัตราการเก็บ"})
+
     Library:CreateWindow({
         Title = "eL hub",
         SubTitle = "Ride A Pet · 0x4.me",
         Owner = "Jeaneism",
         Website = "https://0x4.me",
-        Navigation = "Chunky",
+        Navigation = "Sidebar",
+        BrandIcon = "forest-tree",
+        TitleFont = "Strong",
+        FooterText = "eL hub   /   Ride A Pet   /   0x4.me",
         IntroDuration = 7.5,
+        IntroMark = "eL",
         AnimationIntensity = "Normal",
         Particles = false,
         Watermark = false,
         MenuKey = Enum.KeyCode.LeftControl,
         ConfigFolder = "Ride A Pet",
         Language = "Auto",
-        Theme = "Studio",
+        Theme = "Field",
         OnUnlocked = function()
             xDTaraZ.Util.Try("gamelib load", xDTaraZ.GameLib.LoadModules)
             xDTaraZ.Util.Try("gamelib build", xDTaraZ.GameLib.Build)
