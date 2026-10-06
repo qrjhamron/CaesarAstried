@@ -2,11 +2,11 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/qrjhamron/CaesarAstried/main/pixel-hub/pixel-hub-ui.lua"))()
 local Power
 local Window = Library:CreateWindow({
-    Title = "Tara UI", SubTitle = "POCKET ARCADE", Theme = "Arcade",
-    AnimationIntensity = "Extra",
+    Title = "PixeL UI", SubTitle = "Jeaneism · 0x4.me", Owner = "Jeaneism", Website = "https://0x4.me", Language = "Auto", Theme = "Arcade",
+    AnimationIntensity = "Lively",
     AllOff = function() if Power then Power:SetValue(false) end end,
 })
-local Home = Window:AddTab("Dashboard", "chart", "Explore the Tara UI components")
+local Home = Window:AddTab("Dashboard", "chart", "Explore the PixeL UI components")
 local Stats = Home:AddLeftGroupbox("Session", "network")
 local Activity = Stats:AddStatCard({Title="Current task",Value="Idle",Icon="clock",Status="Off"})
 local Controls = Home:AddRightGroupbox("Controls", "settings-sliders")
