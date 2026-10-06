@@ -277,7 +277,6 @@ Jeaneism.State = {
         KeepOre = false,
         CollectOre = false,
         FarmWorkers = 24,
-        FarmAllOres = true,
         Stage = nil,
         CollectRarities = {},
         KillAura = false,
@@ -653,8 +652,24 @@ function Jeaneism.Data.NewGear(before)
 end
 
 function Jeaneism.Ore.Rarity(oreId)
-    local oreConfig = Jeaneism.GameLib.Need(GameConfig.Ore.Config)[oreId]
-    return oreConfig and Jeaneism.GameLib.Api(GameConfig.Rarity.Helper).GetRarityByLevel(oreConfig.Rarity)
+    local configs = Jeaneism.GameLib.Need(GameConfig.Ore.Config)
+    local oreConfig = configs[oreId] or configs[tostring(oreId)]
+    local numeric = tonumber(oreId)
+    if not oreConfig and numeric then oreConfig = configs[numeric] end
+    if not oreConfig then return nil end
+    return Jeaneism.GameLib.Api(GameConfig.Rarity.Helper).GetRarityByLevel(tonumber(oreConfig.Rarity) or oreConfig.Rarity)
+end
+
+function Jeaneism.Ore.Allows(rarities, name)
+    if not rarities then return true end
+    if not name then return false end
+    if rarities[name] then return true end
+    local wanted = tostring(name):lower():match("^%s*(.-)%s*$")
+    for key, selected in pairs(rarities) do
+        local value = type(key) == "number" and selected or key
+        if selected and tostring(value):lower():match("^%s*(.-)%s*$") == wanted then return true end
+    end
+    return false
 end
 
 function Jeaneism.Ore.Owned(profile)
@@ -874,15 +889,30 @@ function Jeaneism.Stage.Collect(stageId, rarities, keepRunning)
         if not batch then
             local drops = Jeaneism.Util.Remote("Stage", "StageFinishedRF"):InvokeServer(stageId)
             if type(drops) ~= "table" then error("Stage did not return a loot batch", 0) end
-            batch = {stage=stageId, ores={}, stones={}, done={}}
-            for uuid, drop in pairs(drops) do
+            batch = {stage=stageId, drops=drops, ores={}, stones={}, done={}, rarities=rarities and table.clone(rarities)}
+            State.OreBatch = batch
+        end
+        -- Internal callers must not broaden an unfinished auto-farm batch's filter.
+        if not rarities and batch.rarities then rarities = batch.rarities end
+        -- Preserve raw drops before classification; unknown rarity must not silently lose loot.
+        if not batch.classified then
+            local ores, stones = {}, {}
+            local configs = Jeaneism.GameLib.Need(GameConfig.Ore.Config)
+            for uuid, drop in pairs(batch.drops) do
                 if type(drop) == "table" then
-                    table.insert(batch.stones, uuid)
-                elseif not rarities or rarities[Jeaneism.Ore.Rarity(drop)] then
-                    table.insert(batch.ores, uuid)
+                    table.insert(stones, uuid)
+                else
+                    local rarity = Jeaneism.Ore.Rarity(drop)
+                    if rarities and not rarity then error("Cannot resolve ore rarity: " .. tostring(drop), 0) end
+                    local config = configs[drop] or configs[tostring(drop)] or configs[tonumber(drop)]
+                    table.insert(ores, {uuid=uuid, rarity=rarity, rank=tonumber(config and config.Rarity) or 0})
                 end
             end
-            State.OreBatch = batch
+            table.sort(ores, function(left, right)
+                if left.rank ~= right.rank then return left.rank > right.rank end
+                return tostring(left.uuid) < tostring(right.uuid)
+            end)
+            batch.ores, batch.stones, batch.classified = ores, stones, true
         end
         if not active() then return end
         if #batch.stones > 0 then
@@ -896,13 +926,14 @@ function Jeaneism.Stage.Collect(stageId, rarities, keepRunning)
             end
         end
         local ores = {}
-        for _, uuid in ipairs(batch.ores) do
-            if not batch.done[uuid] then table.insert(ores, uuid) end
+        for _, ore in ipairs(batch.ores) do
+            if not batch.done[ore.uuid] and Jeaneism.Ore.Allows(rarities, ore.rarity) then table.insert(ores, ore.uuid) end
         end
         if #ores > 0 then
             local pickOre = Jeaneism.Util.Remote("Stage", "GetOreRF")
             local workers = math.min(#ores, math.clamp(math.floor(tonumber(State.Opt.FarmWorkers) or 24), 1, 32))
             local nextOre, pending, failure = 1, workers, nil
+            local completion = Instance.new("BindableEvent")
             for _ = 1, workers do
                 task.spawn(function()
                     local worked, err = pcall(function()
@@ -921,17 +952,19 @@ function Jeaneism.Stage.Collect(stageId, rarities, keepRunning)
                                     break
                                 end
                                 lastError = accepted and "Ore pickup was rejected" or response
-                                if attempt < 3 and active() then task.wait(0.04 * attempt) end
+                                if attempt < 3 and active() then task.wait(0.02 * attempt) end
                             end
                             if lastError then failure = failure or lastError end
                         end
                     end)
                     if not worked then failure = failure or err end
                     pending -= 1
+                    if pending == 0 then completion:Fire() end
                 end)
             end
-            -- Wait for in-flight requests even after disable; no overlapping batches.
-            while pending > 0 do task.wait(0.001) end
+            -- Resume as soon as the last worker returns, without a polling-frame delay.
+            if pending > 0 then completion.Event:Wait() end
+            completion:Destroy()
             if failure then error(failure, 0) end
         end
         if not active() then return end
@@ -940,19 +973,34 @@ function Jeaneism.Stage.Collect(stageId, rarities, keepRunning)
         State.OreBatch = nil
     end)
     State.CollectBusy = false
-    if not ok then error(result, 0) end
+    if not ok then
+        if keepRunning and not State.FarmRetryNotified then
+            State.FarmRetryNotified = true
+            State.FarmNotice = {kind="Warning", text={EN="Ore pickup delayed; unfinished selected ore will be retried", ID="Pickup ore tertunda; ore pilihan yang belum selesai akan dicoba lagi", TH="เก็บแร่ล่าช้า จะลองแร่ที่เลือกอีกครั้ง"}}
+        end
+        error(result, 0)
+    end
+    if not State.OreBatch and State.FarmRetryNotified then
+        State.FarmRetryNotified = false
+        State.FarmNotice = {kind="Success", text={EN="Pending selected ore batch completed", ID="Batch ore pilihan yang tertunda sudah selesai", TH="เก็บแร่ที่เลือกและค้างอยู่เสร็จแล้ว"}}
+    end
 end
 
 function Jeaneism.Stage.StartCollecting()
     Jeaneism.Scheduler.StartLoop("CollectOre", function()
         if State.Lock then return end
+        local selected = false
+        for _, enabled in pairs(State.Opt.CollectRarities or {}) do
+            if enabled then selected = true; break end
+        end
+        if not selected then return end
         local ok, err = Jeaneism.Util.Exclusive("Farm", function()
             Jeaneism.Stage.Collect(State.Opt.Stage or Jeaneism.Stage.Best(),
-                not State.Opt.FarmAllOres and State.Opt.CollectRarities or nil,
+                State.Opt.CollectRarities,
                 function() return State.Opt.CollectOre end)
         end)
         if not ok and err ~= nil then error(err, 0) end
-    end, function() return 0.04 end)
+    end, function() return 0 end, 0)
 end
 
 function Jeaneism.Stage.FarmStones(stageId)
@@ -2385,7 +2433,7 @@ function Jeaneism.Scheduler.Run(key,fn)
 end
 
 -- One persistent worker per fast feature, including rapid off/on toggles.
-function Jeaneism.Scheduler.StartLoop(key,fn,interval)
+function Jeaneism.Scheduler.StartLoop(key,fn,interval,minimum)
     if State.WorkerLoops[key] then return end
     State.WorkerLoops[key]=true
     task.spawn(function()
@@ -2394,7 +2442,7 @@ function Jeaneism.Scheduler.StartLoop(key,fn,interval)
                 local started = os.clock()
                 if State.Opt[key] then Jeaneism.Scheduler.Run(key,fn) end
                 local delay=State.Opt[key] and interval() or 0.1
-                local period = math.max(0.04,tonumber(delay) or 0.1)
+                local period = math.max(minimum == nil and 0.04 or minimum,tonumber(delay) or 0.1)
                 local elapsed = os.clock() - started
                 -- Account for call time without replaying missed ticks after a stall.
                 task.wait(elapsed < period and math.max(0.001,period-elapsed) or period)
@@ -2701,6 +2749,11 @@ local function BuildInterface()
     end
 
     local function Pump()
+        local notice = State.FarmNotice
+        if notice then
+            State.FarmNotice = nil
+            Notify(notice.text, notice.kind)
+        end
         for _, halt in ipairs(State.Halted) do
             TurnOff(halt[1])
             Notify(("%s stopped: %s"):format(featureNames[halt[1]] or halt[1], halt[2]), "Warning")
@@ -2944,10 +2997,14 @@ local function BuildInterface()
     local function BuildFarm(tab)
         local stageBox = tab:AddLeftGroupbox(T("Stage", "ด่าน"), "map-scroll")
         Pick(stageBox, "Stage", T("Stage", "ด่าน"), T("Any stage, no unlock needed", "เลือกด่านไหนก็ได้ ไม่ต้องปลดล็อก"), Jeaneism.Stage.List)
-        Feature(stageBox, "CollectOre", T("Auto Collect Ore", "เก็บแร่อัตโนมัติ"), Library:T("Fast parallel pickups; retries unfinished ore before the next round", "เก็บแร่พร้อมกันและลองแร่ที่ยังไม่สำเร็จก่อนรอบใหม่", "Pickup paralel cepat; retry ore yang gagal sebelum ronde baru"), function(value)
-            if value then Jeaneism.Stage.StartCollecting() end
+        Feature(stageBox, "CollectOre", T("Auto Collect Ore", "เก็บแร่อัตโนมัติ"), Library:T("Rarity filter always applies; highest rarity picked first", "เก็บตามตัวกรองและเลือกแร่หายากก่อน", "Selalu mengikuti filter; ore rarity tertinggi diambil dulu"), function(value)
+            if value then
+                Jeaneism.Stage.StartCollecting()
+                Notify(Library:T("Ore farm started: selected rarities only", "เริ่มเก็บแร่ตามตัวกรอง", "Farm ore aktif: hanya rarity pilihan"), "Success")
+            else
+                Notify(Library:T("Ore farm paused; pending requests will finish", "หยุดเก็บแร่ รอคำขอที่ส่งแล้ว", "Farm ore dijeda; request yang sedang berjalan akan diselesaikan"), "Info")
+            end
         end)
-        stageBox:AddToggle("FarmAllOres", {Text=Library:T("Collect all ore (ignore rarity filter)", "เก็บแร่ทั้งหมด (ไม่กรองความหายาก)", "Ambil semua ore (abaikan filter rarity)"), Default=opt.FarmAllOres, Callback=function(value) opt.FarmAllOres=value end})
         stageBox:AddSlider("FarmWorkers", {Text=Library:T("Ore pickup workers", "จำนวนตัวเก็บแร่", "Worker pengambil ore"), Min=1, Max=32, Default=opt.FarmWorkers, Rounding=0, Callback=function(value) opt.FarmWorkers=value end})
         MultiSelect(stageBox, "CollectRarities", T("Ore Rarity Filter", "กรอง rarity แร่"), T("Only collect these rarities", "เก็บเฉพาะ rarity ที่เลือก"), rarityNames)
 
@@ -3404,7 +3461,9 @@ local function BuildInterface()
         Website = "https://0x4.me",
         MenuKey = Enum.KeyCode.LeftControl,
         ConfigFolder = Config.SaveFolder,
-        Language = "Auto",
+        Language = "EN",
+        Scale = 0.8,
+        AutoSave = true,
         Theme = "Studio",
         AnimationIntensity = "Normal",
         AllOff = AllOff,
@@ -3412,7 +3471,6 @@ local function BuildInterface()
             BuildTabs()
             Jeaneism.Util.Try(Jeaneism.Scheduler.Boot)
             Notify("Loaded", "Success")
-            Jeaneism.Util.Try(Library.LoadAutoloadConfig, Library)
             if Jeaneism.Boss.HopWanted() and Options.BossHop then Options.BossHop:SetValue(true) end
         end,
     })
