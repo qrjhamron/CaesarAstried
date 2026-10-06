@@ -47,13 +47,13 @@ local Config = {
         TouchMinWidth = 320, TouchMinHeight = 260,
         Topbar = 52, Sidebar = 172, SidebarCompact = 56, Header = 58, Ground = 22, UserCard = 50,
         CompactBreakpoint = 600, TwoColumnMin = 520, Margin = 24, TouchMargin = 10,
-        Radius = 12, Stroke = 3, Shadow = 6,
+        Radius = 6, Stroke = 3, Shadow = 8,
     },
     Metrics = {
         Desktop = { Row = 32, Box = 32, Item = 30, Track = 10, Knob = 18, Switch = Vector2.new(42, 22), SwitchKnob = 16, Tab = 32, Check = 22 },
         Touch = { Row = 38, Box = 36, Item = 36, Track = 12, Knob = 24, Switch = Vector2.new(50, 26), SwitchKnob = 20, Tab = 40, Check = 26 },
     },
-    Group = { Header = 36, PadX = 12, PadY = 12, Shadow = 4, Radius = 12, Stroke = 2 },
+    Group = { Header = 36, PadX = 12, PadY = 12, Shadow = 5, Radius = 5, Stroke = 2 },
     Gap = { X = 8, Y = 8, Column = 16 },
     Page = { Pad = 14, ScrollBar = 6 },
     Dropdown = { MaxVisible = 7, SearchThreshold = 8, MinWidth = 170 },
@@ -228,6 +228,14 @@ Themes.Midnight = ArcadePalette("B699FF", "121426", "252842", "1B1D34")
 Themes.Forest = ArcadePalette("65E0B5", "142D30", "244247", "1C363B")
 Themes.Sunset = ArcadePalette("FFAE70", "302039", "49314D", "3D2842")
 Themes.Frost = ArcadePalette("70BFFF", "172B42", "283F5D", "20334E")
+Themes.Citadel = ArcadePalette("FFD889", "191B2C", "2B2F45", "23263B")
+Themes.Citadel.Element=rgb("383C55")
+Themes.Citadel.Hover=rgb("484D6B")
+Themes.Citadel.Outline=rgb("10121F")
+Themes.Citadel.Shadow=rgb("0C0E19")
+Themes.Citadel.SubText=rgb("C4BDCF")
+Themes.Citadel.AccentDark=rgb("AA7945")
+table.insert(Themes.Order,1,"Citadel")
 Themes.Workshop = ArcadePalette("FFAE70", "192735", "283B4C", "223141")
 table.insert(Themes.Order, 1, "Workshop")
 for index, name in ipairs({ "Arcade", "Daylight", "Midnight", "Forest", "Sunset", "Frost" }) do
@@ -3693,7 +3701,7 @@ function Window.New(options)
     end
     local self = setmetatable({
         Title = options.Title or "PixeL UI",
-        Navigation = "Sidebar",
+        Navigation = options.Navigation == "Sidebar" and "Sidebar" or "Chunky",
         SubTitle = options.SubTitle or "Jeaneism · 0x4.me",
         Owner = options.Owner or Library.Owner,
         Website = options.Website or Library.Website,
@@ -3783,6 +3791,9 @@ end
 -- ของตกแต่ง topbar ตามธีม: เมฆลอยสำหรับธีมกลางวัน ดาว/ถ่านไฟกะพริบสำหรับธีมกลางคืน
 function Window:BuildDecor(topbar)
     self.Clouds, self.Stars = {}, {}
+    for index=1,18 do
+        Draw.Box("Frame",{Position=UDim2.new((index-1)/18,0,0,0),Size=UDim2.fromOffset(10,3),BackgroundTransparency=0.4,ZIndex=2,Parent=topbar},"Coin")
+    end
     for index, spot in ipairs({ { 0.44, 12 }, { 0.51, 32 }, { 0.58, 14 }, { 0.65, 34 }, { 0.72, 10 } }) do
         local pixel = Draw.Box("Frame", { Position = UDim2.new(spot[1], 0, 0, spot[2]),
             Size = UDim2.fromOffset(index % 2 == 0 and 4 or 8, index % 2 == 0 and 4 or 8),
@@ -3883,6 +3894,33 @@ function Window:BuildTopButton(parent, kind, face, shade, ink, callback)
 end
 
 function Window:BuildSidebar()
+    if self.Navigation == "Chunky" then
+        self.Sidebar=Draw.Box("Frame",{Name="BlockNavigation",Position=UDim2.fromOffset(0,Config.Window.Topbar),Parent=self.Body},"PanelHeader")
+        Draw.Box("Frame",{Position=UDim2.new(0,0,1,-3),Size=UDim2.new(1,0,0,3),Parent=self.Sidebar},"Outline")
+        self.TabScroll=Draw.New("ScrollingFrame",{Name="HorizontalTabs",BackgroundTransparency=1,BorderSizePixel=0,Position=UDim2.fromOffset(46,8),ScrollingDirection=Enum.ScrollingDirection.X,ScrollBarThickness=3,CanvasSize=UDim2.new(),CanvasPosition=Vector2.new(0,0),ElasticBehavior=Enum.ElasticBehavior.WhenScrollable,ClipsDescendants=true,Parent=self.Sidebar})
+        Theme.Bind(self.TabScroll,{ScrollBarImageColor3="Coin"})
+        self.TabList=Container.New(self.TabScroll,{Window=self})
+        self.TabList.Layout=function(list) Layout.Dirty[list]=nil;self:LayoutBlockTabs() end
+        local function arrow(text,x)
+            local button=Draw.Box("TextButton",{Position=x,Size=UDim2.fromOffset(30,42),Parent=self.Sidebar},"Element","Outline",3,2)
+            Draw.Text({Text=text,Size=UDim2.fromScale(1,1),TextXAlignment=Enum.TextXAlignment.Center,Parent=button},"Logo",16,"Coin")
+            return button
+        end
+        self.TabPrev=arrow("<",UDim2.fromOffset(8,15))
+        self.TabNext=arrow(">",UDim2.new(1,-38,0,15))
+        self.TabPrev.Activated:Connect(function() self:ScrollTabs(-180) end)
+        self.TabNext.Activated:Connect(function() self:ScrollTabs(180) end)
+        self.TabScroll:GetPropertyChangedSignal("CanvasPosition"):Connect(function() self:UpdateTabArrows() end)
+        self.TabScroll.InputChanged:Connect(function(input)
+            if input.UserInputType==Enum.UserInputType.MouseWheel then self:ScrollTabs(-input.Position.Z*120) end
+        end)
+        self.UserCard=Draw.New("Frame",{Visible=false,Parent=self.Sidebar})
+        self.UserName=Draw.Text({Parent=self.UserCard},"Body",12,"Text")
+        self.UserTag=Draw.Text({Parent=self.UserCard},"Body",12,"Text")
+        self.Avatar=Draw.New("Frame",{Parent=self.UserCard})
+        Lang.OnChange(self,function() self:ApplyLayout();self:RevealBlockTab() end)
+        return
+    end
     local top = Config.Window.Topbar
     local sidebar = Draw.Box("Frame", { Name = "Sidebar", Position = UDim2.fromOffset(0, top), Parent = self.Body }, "Sidebar")
     Draw.Box("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.fromScale(1, 0), Size = UDim2.new(0, 3, 1, 0), ZIndex = 3, Parent = sidebar }, "Outline")
@@ -3978,6 +4016,7 @@ function Window:BuildDrawer()
 end
 
 function Window:SetDrawer(open)
+    if self.Navigation=="Chunky" then self.DrawerOpen=false;self.Sidebar.Visible=not self.Minimized;self.DrawerShade.Visible=false;return end
     self.DrawerOpen = self.MobileDrawer and open == true
     self.Sidebar.Visible = not self.Minimized and (not self.MobileDrawer or self.DrawerOpen)
     self.DrawerShade.Visible = self.MobileDrawer and self.DrawerOpen and not self.Minimized
@@ -4064,9 +4103,86 @@ function Window:FitViewport()
     self:ApplyLayout()
 end
 
+-- One row of raised blocks; labels never collapse into an icon-only menu.
+function Window:LayoutBlockTabs()
+    local available=math.max(1,self.Size.X-92)
+    local height=self.Size.Y<400 and 54 or 62
+    self.NavHeight=height+20
+    self.Sidebar.Size=UDim2.fromOffset(self.Size.X,self.NavHeight)
+    self.TabScroll.Size=UDim2.fromOffset(available,height+5)
+    local x=4
+    for index,tab in ipairs(self.Tabs) do
+        local labelWidth=Layout.Measure(Lang.Resolve(tab.Name),Fonts.Size("Body",13),"Body",300).X
+        local width=math.clamp(labelWidth+64,126,220)
+        tab.Button.Position=UDim2.fromOffset(x,2)
+        tab.Button.Size=UDim2.fromOffset(width,height-4)
+        tab.Button.Visible=true
+        tab.NavX,tab.NavWidth=x,width
+        tab:ApplyCompact(false)
+        x+=width+10
+    end
+    self.NavContentWidth=x
+    self.NavViewportWidth=available
+    self.TabScroll.CanvasSize=UDim2.fromOffset(x,0)
+    self.TabScroll.CanvasPosition=Vector2.new(math.clamp(self.TabScroll.CanvasPosition.X,0,math.max(0,x-available)),0)
+    for _,section in ipairs(self.Sections or {}) do section.Hidden=true;section.Frame.Visible=false end
+    self:UpdateTabArrows()
+end
+
+function Window:UpdateTabArrows()
+    if not self.TabPrev then return end
+    local offset=self.TabScroll.CanvasPosition.X
+    local maximum=math.max(0,(self.NavContentWidth or 0)-(self.NavViewportWidth or 0))
+    self.TabPrev.Active=offset>1
+    self.TabNext.Active=offset<maximum-1
+    self.TabPrev.BackgroundTransparency=self.TabPrev.Active and 0 or 0.6
+    self.TabNext.BackgroundTransparency=self.TabNext.Active and 0 or 0.6
+end
+
+function Window:ScrollTabs(delta)
+    if self.Navigation~="Chunky" then return end
+    local maximum=math.max(0,(self.NavContentWidth or 0)-(self.NavViewportWidth or 0))
+    self.TabScroll.CanvasPosition=Vector2.new(math.clamp(self.TabScroll.CanvasPosition.X+delta,0,maximum),0)
+    self:UpdateTabArrows()
+end
+
+function Window:RevealBlockTab()
+    local tab=self.ActiveTab
+    if self.Navigation~="Chunky" or not tab or not tab.NavX then return end
+    local offset=self.TabScroll.CanvasPosition.X
+    local available=self.NavViewportWidth
+    local desired=offset
+    if tab.NavX<offset+4 then desired=tab.NavX-4
+    elseif tab.NavX+tab.NavWidth>offset+available-4 then desired=tab.NavX+tab.NavWidth-available+4 end
+    self:ScrollTabs(desired-offset)
+end
+
 function Window:ApplyLayout()
     local width, height = self.Size.X, self.Size.Y
     local shadow = Config.Window.Shadow
+    if self.Navigation == "Chunky" then
+        self.Compact = width < Config.Window.CompactBreakpoint
+        self.MobileDrawer = false
+        self.Root.Size = UDim2.fromOffset(width+shadow,(self.Minimized and (Config.Window.Topbar+44) or height)+shadow)
+        if not self.Placed then
+            self.Placed=true
+            self.Root.Position=UDim2.new(0.5,0,0.5,-math.floor((height+shadow)*State.UserScale/2))
+        end
+        self.UserScale.Scale=State.UserScale
+        self:LayoutBlockTabs()
+        self.Sidebar.Visible=not self.Minimized
+        self.DrawerButton.Visible=false
+        self.DrawerShade.Visible=false
+        self.MiniBar.Size=UDim2.fromOffset(width,44)
+        self.Main.Position=UDim2.fromOffset(0,Config.Window.Topbar+self.NavHeight)
+        self.Main.Size=UDim2.fromOffset(width,math.max(1,height-Config.Window.Topbar-Config.Window.Ground-self.NavHeight))
+        for _,tab in ipairs(self.Tabs) do tab.PendingWidth=width end
+        if self.ActiveTab then self.ActiveTab:ApplyWidth() end
+        self:ApplyChrome(width,height)
+        self:ApplyAccent()
+        self:RevealBlockTab()
+        return
+    end
     self.Compact = width < Config.Window.CompactBreakpoint
     self.MobileDrawer = State.Touch or width < 460
     local sidebar = self.MobileDrawer and 0 or (self.Compact and Config.Window.SidebarCompact or Config.Window.Sidebar)
@@ -4119,6 +4235,27 @@ function Window:ApplyShort(height)
 end
 
 function Window:ApplyChrome(width, height)
+    if self.Navigation == "Chunky" then
+        local narrow=width<600 or State.Touch
+        local short=height<430
+        local header=short and 42 or (narrow and 98 or Config.Window.Header)
+        self.UserCard.Visible=false
+        self.TitleHolder.Visible=width>=340
+        self.SubtitlePill.Visible=self.SubTitle~="" and width>=760
+        self.Emblem.Visible=true
+        self:RenderDecor()
+        self.HeaderTitle.Position=UDim2.fromOffset(16,8)
+        self.HeaderTitle.Size=UDim2.new(1,(narrow and not short) and -32 or (short and -180 or -244),0,26)
+        self.HeaderDesc.Visible=height>=400
+        self.HeaderDesc.Position=UDim2.fromOffset(16,36)
+        self.HeaderDesc.Size=UDim2.new(1,narrow and -32 or -244,0,16)
+        self.SearchField.AnchorPoint=Vector2.new(narrow and not short and 0 or 1,narrow and not short and 0 or 0.5)
+        self.SearchField.Position=narrow and not short and UDim2.fromOffset(14,58) or UDim2.new(1,-16,0,header/2)
+        self.SearchField.Size=short and UDim2.fromOffset(140,Util.Metric("Box")) or (narrow and UDim2.new(1,-28,0,Util.Metric("Box")) or UDim2.fromOffset(200,Util.Metric("Box")))
+        self.PageHost.Position=UDim2.fromOffset(0,header)
+        self.PageHost.Size=UDim2.new(1,0,1,-header)
+        return
+    end
     self:ApplyShort(height)
     local narrow = width < 460
     self.SubtitlePill.Visible = self.SubTitle ~= "" and width >= 700
@@ -4157,7 +4294,7 @@ function Window:AddTabSection(text)
     local item = self.TabList:Add(label, { Height = 24 })
     self.Sections = self.Sections or {}
     table.insert(self.Sections, item)
-    item.Hidden = self.Compact
+    item.Hidden = self.Navigation=="Chunky" or self.Compact
     return item
 end
 
@@ -4196,6 +4333,7 @@ function Window:SelectTab(tab)
     tab.Page.Position = State.ReduceMotion and UDim2.new() or UDim2.fromOffset(16, 0)
     Anim.Tween(tab.Page, { Position = UDim2.new() }, Config.Tween.Slide)
     tab:RenderButton()
+    self:RevealBlockTab()
     Anim.Reveal(tab)
     Anim.Bump(tab.IconSlot, 3)
     Theme.Bind(self.HeaderTitle, { TextColor3 = tab.ColorToken })
@@ -4268,7 +4406,7 @@ function Window:Toggle()
 end
 
 function Window:SetContentVisible(visible)
-    self.Sidebar.Visible = visible and (not self.MobileDrawer or self.DrawerOpen == true)
+    self.Sidebar.Visible = visible and (self.Navigation=="Chunky" or not self.MobileDrawer or self.DrawerOpen == true)
     self.Main.Visible, self.Ground.Visible = visible, visible
     self.DrawerShade.Visible = visible and self.MobileDrawer and self.DrawerOpen == true
     self.DrawerButton.Visible = visible and self.MobileDrawer
@@ -4320,6 +4458,27 @@ function Tab.New(window, name, icon, description)
 end
 
 function Tab:BuildButton()
+    if self.Window.Navigation=="Chunky" then
+        local holder=Draw.New("TextButton",{Name="BlockTab",Text="",AutoButtonColor=false,BackgroundTransparency=1})
+        local shade=Draw.Box("Frame",{Position=UDim2.fromOffset(0,6),Size=UDim2.new(1,0,1,-6),Parent=holder},"Shadow","Outline",4,2)
+        local face=Draw.Box("Frame",{Size=UDim2.new(1,0,1,-6),Parent=holder},"Element",nil,4)
+        local stroke=Draw.Stroke(face,"Outline",2,true)
+        Draw.Box("Frame",{Position=UDim2.fromOffset(3,3),Size=UDim2.new(1,-6,0,2),BackgroundTransparency=0.65,Parent=face},"White")
+        self.IconSlot=Draw.Box("Frame",{AnchorPoint=Vector2.new(0,0.5),Position=UDim2.new(0,8,0.5,0),Size=UDim2.fromOffset(32,32),Parent=face},"Backdrop","Outline",3,1)
+        Sprite.New(self.IconSlot,self.Icon,24).Position=UDim2.fromOffset(4,4)
+        self.Label=Draw.Text({Position=UDim2.fromOffset(48,0),Size=UDim2.new(1,-56,1,-3),TextTruncate=Enum.TextTruncate.AtEnd,Parent=face},"Body",13,"Text",self.Name)
+        self.Marker=Draw.Box("Frame",{Position=UDim2.new(0,48,1,-5),Size=UDim2.new(1,-58,0,3),Visible=false,Parent=face},"Ink",nil,1)
+        self.Button,self.Face,self.Shade,self.Stroke=holder,face,shade,stroke
+        holder.MouseEnter:Connect(function() self.Hovered=not State.Touch;self:RenderButton() end)
+        holder.MouseLeave:Connect(function() self.Hovered=false;self.Pressed=false;self:RenderButton() end)
+        holder.MouseButton1Down:Connect(function() self.Pressed=true;self:RenderButton() end)
+        holder.MouseButton1Up:Connect(function() self.Pressed=false;self:RenderButton() end)
+        holder.Activated:Connect(function() self.Window:SelectTab(self) end)
+        self.Window.TabList:Add(holder,{Height=62})
+        Theme.OnRender(self,function() self:RenderButton(true) end)
+        Tooltip.Attach(holder,self.Description or self.Name)
+        return
+    end
     local height = Util.Metric("Tab")
     local holder = Draw.New("TextButton", { Name = "Tab", Text = "", AutoButtonColor = false, BackgroundTransparency = 1 })
     local shade = Draw.Box("Frame", { Position = UDim2.fromOffset(0, 3), Size = UDim2.new(1, 0, 1, -3), BackgroundTransparency = 1, Parent = holder }, "Shadow", nil, 6)
@@ -4354,6 +4513,14 @@ end
 function Tab:RenderButton(instant)
     local active = self.Window.ActiveTab == self
     local duration = instant and 0 or Config.Tween.Normal
+    if self.Window.Navigation=="Chunky" then
+        Theme.Bind(self.Face,{BackgroundColor3=active and self.ColorToken or (self.Hovered and "Hover" or "Element")})
+        Theme.Bind(self.Label,{TextColor3=active and "Ink" or "Text"})
+        Theme.Bind(self.Stroke,{Color=active and self.ColorToken or "Outline"})
+        self.Marker.Visible=active
+        Anim.Tween(self.Face,{Position=UDim2.fromOffset(0,self.Pressed and 5 or (active and 2 or (self.Hovered and -1 or 0)))},duration)
+        return
+    end
     local faceAlpha = active and 0 or (self.Hovered and 0.8 or 1)
     Anim.Tween(self.Face, { BackgroundTransparency = faceAlpha }, duration)
     Anim.Tween(self.Shade, { BackgroundTransparency = active and 0 or 1 }, duration)
@@ -4374,6 +4541,7 @@ function Tab:ApplyWidth()
 end
 
 function Tab:ApplyCompact(compact)
+    if self.Window.Navigation=="Chunky" then self.Label.Visible=true;return end
     self.Label.Visible = not compact
     self.IconSlot.AnchorPoint = Vector2.new(compact and 0.5 or 0, 0.5)
     self.IconSlot.Position = compact and UDim2.fromScale(0.5, 0.5) or UDim2.new(0, 8, 0.5, 0)
@@ -4452,6 +4620,8 @@ function Groupbox:BuildHeader(card, info)
     local bar = Draw.Box("TextButton", { Name = "Header", Size = UDim2.new(1, 0, 0, height), Parent = card }, "PanelHeader", nil, radius)
     Draw.Box("Frame", { Position = UDim2.new(0, 0, 1, -radius), Size = UDim2.new(1, 0, 0, radius), Parent = bar }, "PanelHeader")
     Draw.Box("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, 2), ZIndex = 2, Parent = bar }, "Outline")
+    Draw.Box("Frame",{Position=UDim2.fromOffset(4,4),Size=UDim2.fromOffset(3,3),Parent=bar},"Coin")
+    Draw.Box("Frame",{Position=UDim2.new(1,-7,0,4),Size=UDim2.fromOffset(3,3),Parent=bar},"Coin")
     local offset = 12
     if info.Icon then
         local icon = Sprite.New(bar, info.Icon, 32)
@@ -6305,7 +6475,7 @@ function Library:CreateWindow(options)
     end
     State.Language = Lang.LanguageNames[language] and language or "EN"
     State.UserScale = math.clamp(options.Scale or 1, Config.ScaleRange.Min, Config.ScaleRange.Max)
-    Theme.Apply(options.Theme or "Arcade")
+    Theme.Apply(options.Theme or "Citadel")
     Assets.Configure(Config.DefaultAssets)
     Assets.Configure(options.Assets)
     Window.DetectTouch(options.Layout)
