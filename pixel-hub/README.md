@@ -1,16 +1,18 @@
-# Tara UI 3.0 — Pocket Arcade / Pixel Workshop
+# PixeL UI 1.2 — Jeaneism
 
-Universal Roblox retro/pixel UI library. The existing URL and library API remain available:
+Universal Roblox retro/pixel UI library by **Jeaneism**. Website: **https://0x4.me**.
+
+English, Indonesia and ไทย can be changed live, including the Loot To Forge controls, dashboard, mini HUD and settings. Automatic language selection recognizes Roblox Indonesian and Thai locales. The existing URL and library API remain available:
 
 ```lua
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/qrjhamron/CaesarAstried/main/pixel-hub/pixel-hub-ui.lua"))()
-local Window = Library:CreateWindow({ Title = "Tara UI", Theme = "Workshop", AnimationIntensity = "Extra" })
+local Window = Library:CreateWindow({ Title = "PixeL UI", Theme = "Workshop", AnimationIntensity = "Lively", Language = "Auto" })
 Window:AddSettingsTab()
 ```
 
 The URL loader requires `game:HttpGet` and `loadstring`. In Roblox Studio, import `pixel-hub-ui.lua` as a ModuleScript and require it from a LocalScript. See [example.client.lua](example.client.lua) for Studio or [loader.lua](loader.lua) for URL loading.
 
-## New in 3.0
+## PixeL UI 1.2
 
 - 75 newly authored 16×16 semantic icons; **96 built-in icons total**. Anvil, hammer, ore, equipment, boss, tower, chest, potion, rune, controls, settings, and four robot poses. See [icon-catalog.md](icon-catalog.md).
 - Read-only dashboard cards with live values and explicit Running / Waiting / Off / Success / Error states.
@@ -20,6 +22,18 @@ The URL loader requires `game:HttpGet` and `loadstring`. In Roblox Studio, impor
 - Mini mode displays current task, enabled-feature count and All Off when a callback is configured. All Off switches configured toggles off; it does not cancel an already executing game operation.
 - Narrow-screen/touch navigation drawer, one-column touch content, a separate full-width search row, and centered viewport-constrained pickers.
 - Reduced Motion respects the Roblox setting by default; manual override and intensity controls remain available.
+
+## Localization API
+
+```lua
+Library:SetLanguage("ID") -- EN / ID / TH
+Library:RegisterTranslations("ID", { ["My label"] = "Label saya" })
+local label = Library:T("English text", "ข้อความไทย", "Teks Indonesia")
+Library:OnLanguageChanged(function() -- refresh custom dynamic text here
+end)
+```
+
+The existing `Library:T(english, thai)` call remains compatible. `Extra` remains accepted as a legacy animation value; the settings display uses Lively.
 
 ## Dashboard API
 
@@ -40,7 +54,7 @@ Use `Multiline = true` on cards with longer values. `Library:GetIcons()` returns
 
 ## Loot To Forge
 
-[loot-to-forge.lua](loot-to-forge.lua) uses this library URL, the Workshop theme, a session dashboard, semantic icons, shared All Off and the mini HUD. Community links and changelog moved into Settings. Rejoin loads the published updated script. Original author attribution and existing option/config IDs are preserved.
+[loot-to-forge.lua](loot-to-forge.lua) uses this library URL, the Workshop theme, a session dashboard, semantic icons, shared All Off and the mini HUD. Community links and changelog moved into Settings. Rejoin loads the published updated script. The window, notifications and website identify Jeaneism / PixeL UI. Existing option/config IDs are preserved.
 
 ## Validation
 
