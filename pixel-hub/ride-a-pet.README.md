@@ -2,7 +2,9 @@
 
 Website: https://0x4.me · Owner: Jeaneism
 
-Uses the current PixeL UI 1.2 library: Studio theme, compact horizontal tabs and the original 7.5-second Pixel Assembly opening. UI labels support English, Indonesia and Thai; game item names and existing config/option IDs remain canonical.
+Uses the current PixeL UI 1.2 library: Field theme, compact sidebar navigation and a 7.5-second opening with an eL monogram. The Ranch home shows confirmed deliveries, lost eggs and the next-wave countdown, with collection and return-home actions. Website, updates and webhook controls live in the Hub tab.
+
+UI labels support English, Indonesia and Thai; game item names and existing config/option IDs remain canonical.
 
 ```lua
 loadstring(game:HttpGet("https://raw.githubusercontent.com/qrjhamron/CaesarAstried/main/pixel-hub/ride-a-pet.lua"))()
