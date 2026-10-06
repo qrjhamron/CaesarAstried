@@ -1,37 +1,49 @@
-# Pixel Hub
+# Tara UI 3.0 — Pocket Arcade / Pixel Workshop
 
-Universal retro/pixel Roblox UI library, with six arcade themes, 21 built-in pixel icons, button bursts, tab transitions, and configurable motion.
-
-## Load the library
+Universal Roblox retro/pixel UI library. The existing URL and library API remain available:
 
 ```lua
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/qrjhamron/CaesarAstried/main/pixel-hub/pixel-hub-ui.lua"))()
-local Window = Library:CreateWindow({
-    Theme = "Arcade",
-    AnimationIntensity = "Extra", -- Low / Normal / Extra
-})
+local Window = Library:CreateWindow({ Title = "Tara UI", Theme = "Workshop", AnimationIntensity = "Extra" })
 Window:AddSettingsTab()
 ```
 
-This URL loader requires an environment providing `game:HttpGet` and `loadstring`. In Roblox Studio, import the library as a ModuleScript and require it from a LocalScript.
+The URL loader requires `game:HttpGet` and `loadstring`. In Roblox Studio, import `pixel-hub-ui.lua` as a ModuleScript and require it from a LocalScript. See [example.client.lua](example.client.lua) for Studio or [loader.lua](loader.lua) for URL loading.
 
-Run [loader.lua](loader.lua) for a complete small UI example.
+## New in 3.0
 
-## Themes and icons
+- 75 newly authored 16×16 semantic icons; **96 built-in icons total**. Anvil, hammer, ore, equipment, boss, tower, chest, potion, rune, controls, settings, and four robot poses. See [icon-catalog.md](icon-catalog.md).
+- Read-only dashboard cards with live values and explicit Running / Waiting / Off / Success / Error states.
+- Pocket Arcade identity and a new Workshop palette for Loot To Forge. Contextual accents follow the selected tab; semantic status colors remain meaningful.
+- Robot mascot reacts to work, success and error; decorative idle motion respects animation settings.
+- Explicit result feedback for confirmed forge responses and successful config saves. A click only indicates interaction.
+- Mini mode displays current task, enabled-feature count and All Off when a callback is configured. All Off switches configured toggles off; it does not cancel an already executing game operation.
+- Narrow-screen/touch navigation drawer, one-column touch content, a separate full-width search row, and centered viewport-constrained pickers.
+- Reduced Motion respects the Roblox setting by default; manual override and intensity controls remain available.
 
-Themes: Arcade, Daylight, Midnight, Forest, Sunset, Frost. Older themes remain accepted.
-
-Icons: spark, home, robot, crystal, cartridge, portal, leaf, shield, eye, flag, key, gear, heart, warning, check, bolt, search, code, copy, refresh, block.
-
-Legacy icon names such as mushroom, qblock, pipe, and boo resolve to the new universal sprites. Existing option IDs and storage paths are retained for configuration compatibility.
-
-## Motion
+## Dashboard API
 
 ```lua
-Library:SetAnimationIntensity("Normal")
-Library:SetReduceMotion(true)
+local Tab = Window:AddTab("Home", "chart")
+local Group = Tab:AddLeftGroupbox("Session", "network")
+local Card = Group:AddStatCard({ Title = "Coins", Value = 0, Icon = "coin-stack", Status = "Waiting" })
+Card:SetValue(1200)
+Card:SetStatus("Success", "Current")
+Card:SetIcon("gem-green")
+Window:SetSessionStatus("Forge", 2, "Running")
+Window:SetAllOff(function() -- switch your feature toggles off here
+end)
+Library:Feedback("Forge") -- only after your application confirms the result
 ```
 
-Decorative motion and particles pause when the window is hidden or minimized. Reduce Motion disables decorative motion and makes transitions immediate.
+Use `Multiline = true` on cards with longer values. `Library:GetIcons()` returns a sorted copy of all icon names. Existing controls, option IDs, configs, language support, custom asset overrides and legacy icon aliases remain compatible. The storage directory remains `mariohub` to preserve saved data.
 
-Luau compilation and mocked animation lifecycle checks passed. Visual behavior still needs validation in Roblox.
+## Loot To Forge
+
+[loot-to-forge.lua](loot-to-forge.lua) uses this library URL, the Workshop theme, a session dashboard, semantic icons, shared All Off and the mini HUD. Community links and changelog moved into Settings. Rejoin loads the published updated script. Original author attribution and existing option/config IDs are preserved.
+
+## Validation
+
+Library, game integration, URL example and Studio example compile with Luau. Mock tests cover icon dimensions/aliases, dashboard updates, semantic colors, mobile/desktop layout transitions, popup placement, mini All Off, maskot reactions, motion pause/resume and cleanup. Separate tests check confirmed forge response counts, rejected responses and missing ore.
+
+There is no Roblox runtime in this workspace. Actual game data, visual clipping, keyboard/touch behavior and frame rates require an in-game check. Mock tests cannot establish successful execution in Loot To Forge.
