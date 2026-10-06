@@ -41,17 +41,17 @@ local Config = {
     },
     -- ไทย: glyph ไทยเล็กกว่าละติน ต้องขยายให้อ่านสบาย
     ThaiSizeBonus = { Body = 2, Desc = 2, Display = 1, Strong = 1 },
-    Text = { Title = 26, Header = 22, Group = 16, Label = 15, Desc = 13, Small = 12, Button = 15, Watermark = 13, Section = 13 },
+    Text = { Title = 20, Header = 20, Group = 16, Label = 15, Desc = 13, Small = 12, Button = 15, Watermark = 13, Section = 13 },
     Window = {
-        Width = 900, Height = 640, MinWidth = 520, MinHeight = 360,
+        Width = 760, Height = 520, MinWidth = 480, MinHeight = 320,
         TouchMinWidth = 320, TouchMinHeight = 260,
-        Topbar = 56, Sidebar = 196, SidebarCompact = 64, Header = 62, Ground = 24, UserCard = 58,
-        CompactBreakpoint = 640, TwoColumnMin = 540, Margin = 24, TouchMargin = 10,
+        Topbar = 52, Sidebar = 172, SidebarCompact = 56, Header = 58, Ground = 22, UserCard = 50,
+        CompactBreakpoint = 600, TwoColumnMin = 520, Margin = 24, TouchMargin = 10,
         Radius = 12, Stroke = 3, Shadow = 6,
     },
     Metrics = {
-        Desktop = { Row = 32, Box = 32, Item = 30, Track = 10, Knob = 18, Switch = Vector2.new(42, 22), SwitchKnob = 16, Tab = 38, Check = 22 },
-        Touch = { Row = 38, Box = 36, Item = 36, Track = 12, Knob = 24, Switch = Vector2.new(50, 26), SwitchKnob = 20, Tab = 44, Check = 26 },
+        Desktop = { Row = 32, Box = 32, Item = 30, Track = 10, Knob = 18, Switch = Vector2.new(42, 22), SwitchKnob = 16, Tab = 32, Check = 22 },
+        Touch = { Row = 38, Box = 36, Item = 36, Track = 12, Knob = 24, Switch = Vector2.new(50, 26), SwitchKnob = 20, Tab = 40, Check = 26 },
     },
     Group = { Header = 36, PadX = 12, PadY = 12, Shadow = 4, Radius = 12, Stroke = 2 },
     Gap = { X = 8, Y = 8, Column = 16 },
@@ -2770,14 +2770,14 @@ end
 
 function Mascot.Build(parent)
     Mascot.Holder = Draw.New("Frame", { Name = "Mascot", BackgroundTransparency = 1,
-        AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 8, 0.5, 0), Size = UDim2.fromOffset(32, 32), Parent = parent })
+        AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.fromOffset(22, 22), Parent = parent })
     Mascot:SetPose("robot-idle")
 end
 
 function Mascot:SetPose(name)
     if not self.Holder or not self.Holder.Parent then return end
     if self.Sprite then self.Sprite:Destroy() end
-    self.Sprite = Sprite.New(self.Holder, name, 32)
+    self.Sprite = Sprite.New(self.Holder, name, 22)
 end
 
 function Mascot:React(kind)
@@ -3693,7 +3693,7 @@ function Window.New(options)
     end
     local self = setmetatable({
         Title = options.Title or "PixeL UI",
-        Navigation = options.Navigation == "Sidebar" and "Sidebar" or "Top",
+        Navigation = "Sidebar",
         SubTitle = options.SubTitle or "Jeaneism · 0x4.me",
         Owner = options.Owner or Library.Owner,
         Website = options.Website or Library.Website,
@@ -3748,8 +3748,8 @@ function Window:BuildTopbar()
     self.Topbar = topbar
     self:BuildDecor(topbar)
     local left = Draw.New("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -(State.Touch and 242 or 218), 1, -3), ZIndex = 4, Parent = topbar })
-    Draw.List(left, 10, true, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
-    self.Emblem = Draw.New("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(32, 32), Parent = left })
+    Draw.List(left, 8, true, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
+    self.Emblem = Draw.New("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Parent = left })
     Mascot.Build(self.Emblem)
     Util.Every(4, function()
         if self.Visible and not self.Minimized and not State.ReduceMotion and State.AnimationIntensity ~= "Low" then
@@ -3802,7 +3802,7 @@ function Window:RenderDecor()
 end
 
 function Window:BuildTitle(parent)
-    local holder = Draw.New("Frame", { BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 34), LayoutOrder = 1, Parent = parent })
+    local holder = Draw.New("Frame", { BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 26), LayoutOrder = 1, Parent = parent })
     Draw.List(holder, 1, true, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
     self.Letters = {}
     local size = Config.Text.Title
@@ -3822,7 +3822,7 @@ function Window:WaveTitle()
     if State.ReduceMotion or State.AnimationIntensity == "Low" then return end
     for index, letter in ipairs(self.Letters) do
         letter.Position = UDim2.new()
-        Anim.Tween(letter, { Position = UDim2.fromOffset(0, -6) }, 0.14, "Out", 0, true, index * 0.045)
+        Anim.Tween(letter, { Position = UDim2.fromOffset(0, -3) }, 0.14, "Out", 0, true, index * 0.045)
     end
 end
 
@@ -3883,23 +3883,6 @@ function Window:BuildTopButton(parent, kind, face, shade, ink, callback)
 end
 
 function Window:BuildSidebar()
-    if self.Navigation == "Top" then
-        self.Sidebar = Draw.Box("Frame", {Name="TopNavigation", Position=UDim2.fromOffset(0, Config.Window.Topbar), Parent=self.Body}, "PanelHeader")
-        self.NavCaption = Draw.Text({Position=UDim2.fromOffset(14,6),Size=UDim2.new(1,-160,0,18),Parent=self.Sidebar}, "Strong", 11, "SubText", {EN="WORKSPACE",ID="RUANG KERJA",TH="พื้นที่ทำงาน"})
-        self.NavOwner = Draw.Text({Text="Jeaneism / 0x4.me",TextXAlignment=Enum.TextXAlignment.Right,Position=UDim2.new(1,-160,0,6),Size=UDim2.fromOffset(146,18),Parent=self.Sidebar}, "Desc",11,"Muted")
-        Draw.Box("Frame",{Position=UDim2.new(0,0,1,-2),Size=UDim2.new(1,0,0,2),Parent=self.Sidebar},"Outline")
-        self.TabScroll = Draw.New("Frame",{Name="Tabs",BackgroundTransparency=1,Position=UDim2.fromOffset(12,30),Parent=self.Sidebar})
-        self.TabList = Container.New(self.TabScroll,{Window=self})
-        self.TabList.Layout = function(list)
-            Layout.Dirty[list] = nil
-            self:LayoutTopTabs()
-        end
-        self.UserCard = Draw.New("Frame",{Visible=false,BackgroundTransparency=1,Parent=self.Sidebar})
-        self.UserName = Draw.Text({Parent=self.UserCard},"Body",12,"Text")
-        self.UserTag = Draw.Text({Parent=self.UserCard},"Body",12,"Text")
-        self.Avatar = Draw.New("Frame",{Parent=self.UserCard})
-        return
-    end
     local top = Config.Window.Topbar
     local sidebar = Draw.Box("Frame", { Name = "Sidebar", Position = UDim2.fromOffset(0, top), Parent = self.Body }, "Sidebar")
     Draw.Box("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.fromScale(1, 0), Size = UDim2.new(0, 3, 1, 0), ZIndex = 3, Parent = sidebar }, "Outline")
@@ -3995,12 +3978,6 @@ function Window:BuildDrawer()
 end
 
 function Window:SetDrawer(open)
-    if self.Navigation == "Top" then
-        self.DrawerOpen=false
-        self.Sidebar.Visible=not self.Minimized
-        self.DrawerShade.Visible=false
-        return
-    end
     self.DrawerOpen = self.MobileDrawer and open == true
     self.Sidebar.Visible = not self.Minimized and (not self.MobileDrawer or self.DrawerOpen)
     self.DrawerShade.Visible = self.MobileDrawer and self.DrawerOpen and not self.Minimized
@@ -4076,8 +4053,10 @@ function Window:FitViewport()
     end
     local margin = (State.Touch and Config.Window.TouchMargin or Config.Window.Margin) * 2
     local minWidth, minHeight = self:MinSize()
-    local maxWidth = math.max(minWidth, (viewport.X - margin) / State.UserScale)
-    local maxHeight = math.max(minHeight, (viewport.Y - margin) / State.UserScale)
+    local maxWidth = math.max(1, (viewport.X - margin) / State.UserScale)
+    local maxHeight = math.max(1, (viewport.Y - margin) / State.UserScale)
+    minWidth = math.min(minWidth, maxWidth)
+    minHeight = math.min(minHeight, maxHeight)
     self.Size = Vector2.new(
         math.floor(math.clamp(self.Desired.X, minWidth, maxWidth)),
         math.floor(math.clamp(self.Desired.Y, minHeight, maxHeight))
@@ -4085,63 +4064,9 @@ function Window:FitViewport()
     self:ApplyLayout()
 end
 
--- Wrapped navigation keeps every tab visible without opening a menu.
-function Window:LayoutTopTabs()
-    local width = self.Size.X
-    local available = math.max(1,width-24)
-    local short=self.Size.Y<430
-    local columns = short and math.max(1,math.ceil(#self.Tabs/2)) or math.max(1,math.floor((available+8)/(State.Touch and 104 or 152)))
-    columns = math.min(columns,math.max(1,#self.Tabs))
-    local rows = math.max(1,math.ceil(#self.Tabs/columns))
-    local cellHeight = short and 32 or (State.Touch and 54 or 48)
-    local cellWidth = (available-(columns-1)*8)/columns
-    local inset=short and 8 or 30
-    self.NavHeight = inset+10+rows*(cellHeight+6)
-    if self.NavCaption then self.NavCaption.Visible=not short end
-    if self.NavOwner then self.NavOwner.Visible=not short end
-    self.TabScroll.Position=UDim2.fromOffset(12,inset)
-    self.Sidebar.Size = UDim2.fromOffset(width,self.NavHeight)
-    self.TabScroll.Size = UDim2.fromOffset(available,self.NavHeight-inset-10)
-    for _,item in ipairs(self.Sections or {}) do item.Hidden=true;item.Frame.Visible=false end
-    for index,tab in ipairs(self.Tabs) do
-        local column=(index-1)%columns
-        local row=math.floor((index-1)/columns)
-        tab.Button.Position=UDim2.fromOffset(column*(cellWidth+8),row*(cellHeight+6))
-        tab.Button.Size=UDim2.fromOffset(cellWidth,cellHeight)
-        tab.Button.Visible=true
-        tab:ApplyCompact(false)
-        Fonts.Style(tab.Label,"Body",short and 9 or (State.Touch and 11 or 12))
-        tab.IconSlot.Visible=not short
-        tab.Label.Position=UDim2.fromOffset(short and 6 or 40,2)
-        tab.Label.Size=UDim2.new(1,short and -12 or -48,1,-7)
-    end
-end
-
 function Window:ApplyLayout()
     local width, height = self.Size.X, self.Size.Y
     local shadow = Config.Window.Shadow
-    if self.Navigation == "Top" then
-        self.Compact = width < Config.Window.CompactBreakpoint
-        self.MobileDrawer = false
-        self.Root.Size = UDim2.fromOffset(width+shadow,(self.Minimized and (Config.Window.Topbar+44) or height)+shadow)
-        if not self.Placed then
-            self.Placed=true
-            self.Root.Position=UDim2.new(0.5,0,0.5,-math.floor((height+shadow)*State.UserScale/2))
-        end
-        self.UserScale.Scale=State.UserScale
-        self:LayoutTopTabs()
-        self.Sidebar.Visible=not self.Minimized
-        self.DrawerButton.Visible=false
-        self.DrawerShade.Visible=false
-        self.MiniBar.Size=UDim2.fromOffset(width,44)
-        self.Main.Position=UDim2.fromOffset(0,Config.Window.Topbar+self.NavHeight)
-        self.Main.Size=UDim2.fromOffset(width,math.max(1,height-Config.Window.Topbar-Config.Window.Ground-self.NavHeight))
-        for _,tab in ipairs(self.Tabs) do tab.PendingWidth=width end
-        if self.ActiveTab then self.ActiveTab:ApplyWidth() end
-        self:ApplyChrome(width,height)
-        self:ApplyAccent()
-        return
-    end
     self.Compact = width < Config.Window.CompactBreakpoint
     self.MobileDrawer = State.Touch or width < 460
     local sidebar = self.MobileDrawer and 0 or (self.Compact and Config.Window.SidebarCompact or Config.Window.Sidebar)
@@ -4194,34 +4119,13 @@ function Window:ApplyShort(height)
 end
 
 function Window:ApplyChrome(width, height)
-    if self.Navigation == "Top" then
-        local narrow=width<600 or State.Touch
-        local short=height<430
-        local header=short and 42 or (narrow and 98 or Config.Window.Header)
-        self.UserCard.Visible=false
-        self.TitleHolder.Visible=width>=340
-        self.SubtitlePill.Visible=self.SubTitle~="" and width>=760
-        self.Emblem.Visible=true
-        self:RenderDecor()
-        self.HeaderTitle.Position=UDim2.fromOffset(16,8)
-        self.HeaderTitle.Size=UDim2.new(1,(narrow and not short) and -32 or -180,0,26)
-        self.HeaderDesc.Visible=height>=400
-        self.HeaderDesc.Position=UDim2.fromOffset(16,36)
-        self.HeaderDesc.Size=UDim2.new(1,narrow and -32 or -244,0,16)
-        self.SearchField.AnchorPoint=Vector2.new(narrow and not short and 0 or 1,narrow and not short and 0 or 0.5)
-        self.SearchField.Position=narrow and not short and UDim2.fromOffset(14,58) or UDim2.new(1,-16,0,header/2)
-        self.SearchField.Size=short and UDim2.fromOffset(140,Util.Metric("Box")) or (narrow and UDim2.new(1,-28,0,Util.Metric("Box")) or UDim2.fromOffset(200,Util.Metric("Box")))
-        self.PageHost.Position=UDim2.fromOffset(0,header)
-        self.PageHost.Size=UDim2.new(1,0,1,-header)
-        return
-    end
     self:ApplyShort(height)
     local narrow = width < 460
     self.SubtitlePill.Visible = self.SubTitle ~= "" and width >= 700
     self:RenderDecor()
     self.Emblem.Visible = true
     self.TitleHolder.Visible = width >= (self.MobileDrawer and 480 or 340)
-    local searchWidth = self.Compact and (narrow and 110 or 140) or 200
+    local searchWidth = self.Compact and (narrow and 110 or 140) or 180
     self.SearchField.Size = UDim2.fromOffset(searchWidth, Util.Metric("Box"))
     self.HeaderTitle.Size = UDim2.new(1, -(searchWidth + 44), 0, 26)
     self.HeaderDesc.Size = UDim2.new(1, -(searchWidth + 44), 0, 16)
@@ -4253,7 +4157,7 @@ function Window:AddTabSection(text)
     local item = self.TabList:Add(label, { Height = 24 })
     self.Sections = self.Sections or {}
     table.insert(self.Sections, item)
-    item.Hidden = self.Navigation == "Top" or self.Compact
+    item.Hidden = self.Compact
     return item
 end
 
@@ -4293,7 +4197,7 @@ function Window:SelectTab(tab)
     Anim.Tween(tab.Page, { Position = UDim2.new() }, Config.Tween.Slide)
     tab:RenderButton()
     Anim.Reveal(tab)
-    Anim.Bump(tab.IconSlot, 6)
+    Anim.Bump(tab.IconSlot, 3)
     Theme.Bind(self.HeaderTitle, { TextColor3 = tab.ColorToken })
     Lang.Bind(self.HeaderTitle, tab.Name)
     Lang.Bind(self.HeaderDesc, tab.Description or "")
@@ -4364,7 +4268,7 @@ function Window:Toggle()
 end
 
 function Window:SetContentVisible(visible)
-    self.Sidebar.Visible = visible and (self.Navigation == "Top" or not self.MobileDrawer or self.DrawerOpen == true)
+    self.Sidebar.Visible = visible and (not self.MobileDrawer or self.DrawerOpen == true)
     self.Main.Visible, self.Ground.Visible = visible, visible
     self.DrawerShade.Visible = visible and self.MobileDrawer and self.DrawerOpen == true
     self.DrawerButton.Visible = visible and self.MobileDrawer
@@ -4418,26 +4322,13 @@ end
 function Tab:BuildButton()
     local height = Util.Metric("Tab")
     local holder = Draw.New("TextButton", { Name = "Tab", Text = "", AutoButtonColor = false, BackgroundTransparency = 1 })
-    local shade = Draw.Box("Frame", { Position = UDim2.fromOffset(0, 3), Size = UDim2.new(1, 0, 1, -3), BackgroundTransparency = 1, Parent = holder }, "Shadow", nil, 10)
-    local face = Draw.Box("Frame", { Size = UDim2.new(1, 0, 1, -3), BackgroundTransparency = 1, Parent = holder }, "TabActive", nil, 10)
+    local shade = Draw.Box("Frame", { Position = UDim2.fromOffset(0, 3), Size = UDim2.new(1, 0, 1, -3), BackgroundTransparency = 1, Parent = holder }, "Shadow", nil, 6)
+    local face = Draw.Box("Frame", { Size = UDim2.new(1, 0, 1, -3), BackgroundTransparency = 1, Parent = holder }, "TabActive", nil, 6)
     local stroke = Draw.Stroke(face, "Outline", 2, true)
     stroke.Transparency = 1
-    self.IconSlot = Draw.New("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 8, 0.5, 0), Size = UDim2.fromOffset(32, 32), Parent = face })
-    Sprite.New(self.IconSlot, self.Icon, 32)
-    self.Label = Draw.Text({ Position = UDim2.fromOffset(48, 0), Size = UDim2.new(1, -52, 1, 0), TextTruncate = Enum.TextTruncate.AtEnd, Parent = face }, "Body", Util.TextSize("Label") + 1, "SidebarText", self.Name)
-    if self.Window.Navigation == "Top" then
-        self.IconSlot.Size=UDim2.fromOffset(26,26)
-        for _,child in ipairs(self.IconSlot:GetChildren()) do
-            if child:IsA("GuiObject") then child.Size=UDim2.fromOffset(26,26) end
-        end
-        self.IconSlot.Position=UDim2.new(0,8,0.5,-1)
-        self.Label.Position=UDim2.fromOffset(40,2)
-        self.Label.Size=UDim2.new(1,-48,1,-7)
-        Fonts.Style(self.Label,"Body",State.Touch and 11 or 12)
-        self.Label.TextWrapped=true
-        self.Label.TextTruncate=Enum.TextTruncate.None
-        self.Indicator=Draw.Box("Frame",{Position=UDim2.new(0,10,1,-4),Size=UDim2.new(1,-20,0,3),Visible=false,Parent=face},"Ink",nil,2)
-    end
+    self.IconSlot = Draw.New("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 8, 0.5, 0), Size = UDim2.fromOffset(24, 24), Parent = face })
+    Sprite.New(self.IconSlot, self.Icon, 24)
+    self.Label = Draw.Text({ Position = UDim2.fromOffset(38, 0), Size = UDim2.new(1, -44, 1, 0), TextTruncate = Enum.TextTruncate.AtEnd, Parent = face }, "Body", 13, "SidebarText", self.Name)
     self.Button, self.Face, self.Shade, self.Stroke = holder, face, shade, stroke
     holder.MouseEnter:Connect(function()
         self.Hovered = not State.Touch
@@ -4463,14 +4354,12 @@ end
 function Tab:RenderButton(instant)
     local active = self.Window.ActiveTab == self
     local duration = instant and 0 or Config.Tween.Normal
-    local top = self.Window.Navigation == "Top"
-    local faceAlpha = active and 0 or (self.Hovered and 0.55 or (top and 0.1 or 1))
-    if self.Indicator then self.Indicator.Visible=active end
+    local faceAlpha = active and 0 or (self.Hovered and 0.8 or 1)
     Anim.Tween(self.Face, { BackgroundTransparency = faceAlpha }, duration)
     Anim.Tween(self.Shade, { BackgroundTransparency = active and 0 or 1 }, duration)
     Anim.Tween(self.Stroke, { Transparency = active and 0 or 1 }, duration)
-    Theme.Bind(self.Face, { BackgroundColor3 = top and not active and "Element" or self.ColorToken })
-    Theme.Bind(self.Label, { TextColor3 = active and "Ink" or (top and "Text" or "SidebarText") })
+    Theme.Bind(self.Face, { BackgroundColor3 = self.ColorToken })
+    Theme.Bind(self.Label, { TextColor3 = active and "Ink" or "SidebarText" })
 end
 
 -- แท็บที่ซ่อนอยู่จะคำนวณ layout ตอนถูกเปิด ไม่เสียแรงตอนลากขยายหน้าต่าง
@@ -4485,12 +4374,6 @@ function Tab:ApplyWidth()
 end
 
 function Tab:ApplyCompact(compact)
-    if self.Window.Navigation == "Top" then
-        self.Label.Visible=true
-        self.IconSlot.AnchorPoint=Vector2.new(0,0.5)
-        self.IconSlot.Position=UDim2.new(0,8,0.5,-1)
-        return
-    end
     self.Label.Visible = not compact
     self.IconSlot.AnchorPoint = Vector2.new(compact and 0.5 or 0, 0.5)
     self.IconSlot.Position = compact and UDim2.fromScale(0.5, 0.5) or UDim2.new(0, 8, 0.5, 0)
