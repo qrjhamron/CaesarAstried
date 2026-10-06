@@ -2,7 +2,7 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/qrjhamron/CaesarAstried/main/pixel-hub/pixel-hub-ui.lua"))()
 local Power
 local Window = Library:CreateWindow({
-    Title = "PixeL UI", Navigation = "Top", IntroDuration = 7.5, SubTitle = "Jeaneism · 0x4.me", Owner = "Jeaneism", Website = "https://0x4.me", Language = "Auto", Theme = "Arcade",
+    Title = "PixeL UI", Navigation = "Sidebar", IntroDuration = 7.5, SubTitle = "Jeaneism · 0x4.me", Owner = "Jeaneism", Website = "https://0x4.me", Language = "Auto", Theme = "Arcade",
     AnimationIntensity = "Lively",
     AllOff = function() if Power then Power:SetValue(false) end end,
 })
