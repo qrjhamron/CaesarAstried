@@ -47,13 +47,13 @@ local Config = {
         TouchMinWidth = 320, TouchMinHeight = 260,
         Topbar = 52, Sidebar = 172, SidebarCompact = 56, Header = 58, Ground = 22, UserCard = 50,
         CompactBreakpoint = 600, TwoColumnMin = 520, Margin = 24, TouchMargin = 10,
-        Radius = 6, Stroke = 3, Shadow = 8,
+        Radius = 8, Stroke = 1, Shadow = 4,
     },
     Metrics = {
         Desktop = { Row = 32, Box = 32, Item = 30, Track = 10, Knob = 18, Switch = Vector2.new(42, 22), SwitchKnob = 16, Tab = 32, Check = 22 },
         Touch = { Row = 38, Box = 36, Item = 36, Track = 12, Knob = 24, Switch = Vector2.new(50, 26), SwitchKnob = 20, Tab = 40, Check = 26 },
     },
-    Group = { Header = 36, PadX = 12, PadY = 12, Shadow = 5, Radius = 5, Stroke = 2 },
+    Group = { Header = 32, PadX = 12, PadY = 10, Shadow = 2, Radius = 6, Stroke = 1 },
     Gap = { X = 8, Y = 8, Column = 16 },
     Page = { Pad = 14, ScrollBar = 6 },
     Dropdown = { MaxVisible = 7, SearchThreshold = 8, MinWidth = 170 },
@@ -236,6 +236,18 @@ Themes.Citadel.Shadow=rgb("0C0E19")
 Themes.Citadel.SubText=rgb("C4BDCF")
 Themes.Citadel.AccentDark=rgb("AA7945")
 table.insert(Themes.Order,1,"Citadel")
+Themes.Studio = ArcadePalette("8DDAC6", "181D28", "232A38", "1E2532")
+Themes.Studio.Element=rgb("2B3444")
+Themes.Studio.Hover=rgb("344054")
+Themes.Studio.Track=rgb("364257")
+Themes.Studio.Outline=rgb("121824")
+Themes.Studio.Shadow=rgb("10151F")
+Themes.Studio.Text=rgb("EDF0F5")
+Themes.Studio.SubText=rgb("ABB5C7")
+Themes.Studio.Muted=rgb("8794A9")
+Themes.Studio.TopbarText=rgb("EDF0F5")
+Themes.Studio.AccentDark=rgb("4D9E8E")
+table.insert(Themes.Order,1,"Studio")
 Themes.Workshop = ArcadePalette("FFAE70", "192735", "283B4C", "223141")
 table.insert(Themes.Order, 1, "Workshop")
 for index, name in ipairs({ "Arcade", "Daylight", "Midnight", "Forest", "Sunset", "Frost" }) do
@@ -2739,20 +2751,20 @@ end
 -- Read-only dashboard cards. Values never animate as proof of game success.
 function Container:AddStatCard(info)
     info = info or {}
-    local frame = Draw.Box("Frame", { Name = "StatCard" }, "Element", "Outline", 0, 2)
+    local frame = Draw.Box("Frame", { Name = "StatCard" }, "Element", nil, 6)
     local selfCard = setmetatable({ Frame = frame, Container = self }, StatusCard)
     selfCard:SetIcon(info.Icon or "chart")
-    selfCard.Title = Draw.Text({ Position = UDim2.fromOffset(56, 8), Size = UDim2.new(1, -68, 0, 20),
-        TextTruncate = Enum.TextTruncate.AtEnd, Parent = frame }, "Strong", 14, "SubText", info.Title or "")
-    selfCard.Value = Draw.Text({ Position = UDim2.fromOffset(56, 30), Size = UDim2.new(1, -68, 0, 24),
+    selfCard.Title = Draw.Text({ Position = UDim2.fromOffset(44, 6), Size = UDim2.new(1, -54, 0, 16),
+        TextTruncate = Enum.TextTruncate.AtEnd, Parent = frame }, "Body", 12, "SubText", info.Title or "")
+    selfCard.Value = Draw.Text({ Position = UDim2.fromOffset(44, 24), Size = UDim2.new(1, -54, 0, 22),
         TextTruncate = info.Multiline and Enum.TextTruncate.None or Enum.TextTruncate.AtEnd,
         TextWrapped = info.Multiline == true, TextYAlignment = Enum.TextYAlignment.Top,
-        Parent = frame }, "Strong", info.Multiline and 14 or 20, "Text", info.Value ~= nil and info.Value or "—")
-    if info.Multiline then selfCard.Value.Size = UDim2.new(1, -68, 0, 62) end
-    selfCard.Status = Draw.Text({ Position = UDim2.fromOffset(12, 60), Size = UDim2.new(1, -24, 0, 20),
-        TextTruncate = Enum.TextTruncate.AtEnd, Parent = frame }, "Desc", 13, "Muted", "")
-    if info.Multiline then selfCard.Status.Position = UDim2.fromOffset(12, 100) end
-    selfCard.Item = self:Add(frame, { Height = info.Multiline and 130 or 90, Search = Lang.SearchText(info.Title) })
+        Parent = frame }, "Strong", info.Multiline and 13 or 18, "Text", info.Value ~= nil and info.Value or "—")
+    if info.Multiline then selfCard.Value.Size = UDim2.new(1, -54, 0, 48) end
+    selfCard.Status = Draw.Text({ Position = UDim2.fromOffset(44, 48), Size = UDim2.new(1, -54, 0, 16),
+        TextTruncate = Enum.TextTruncate.AtEnd, Parent = frame }, "Desc", 10, "Muted", "")
+    if info.Multiline then selfCard.Status.Position = UDim2.fromOffset(44, 76) end
+    selfCard.Item = self:Add(frame, { Height = info.Multiline and 100 or 68, Search = Lang.SearchText(info.Title) })
     selfCard:SetStatus(info.Status or "Off", info.Note)
     Lang.OnChange(frame, function() selfCard:SetStatus(selfCard.StatusCode, selfCard.Note) end)
     return selfCard
@@ -2760,7 +2772,7 @@ end
 
 function StatusCard:SetIcon(name)
     if self.Icon then self.Icon:Destroy() end
-    self.Icon = Sprite.New(self.Frame, name, 32)
+    self.Icon = Sprite.New(self.Frame, name, 24)
     self.Icon.Position = UDim2.fromOffset(12, 12)
 end
 
@@ -3755,7 +3767,7 @@ function Window:BuildTopbar()
     self.TopbarLine = Draw.Box("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, 3), ZIndex = 3, Parent = topbar }, "Outline")
     self.Topbar = topbar
     self:BuildDecor(topbar)
-    local left = Draw.New("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -(State.Touch and 242 or 218), 1, -3), ZIndex = 4, Parent = topbar })
+    local left = Draw.New("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -(State.Touch and 242 or 218), 1, -3), ClipsDescendants=true, ZIndex = 4, Parent = topbar })
     Draw.List(left, 8, true, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
     self.Emblem = Draw.New("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Parent = left })
     Mascot.Build(self.Emblem)
@@ -3791,9 +3803,6 @@ end
 -- ของตกแต่ง topbar ตามธีม: เมฆลอยสำหรับธีมกลางวัน ดาว/ถ่านไฟกะพริบสำหรับธีมกลางคืน
 function Window:BuildDecor(topbar)
     self.Clouds, self.Stars = {}, {}
-    for index=1,18 do
-        Draw.Box("Frame",{Position=UDim2.new((index-1)/18,0,0,0),Size=UDim2.fromOffset(10,3),BackgroundTransparency=0.4,ZIndex=2,Parent=topbar},"Coin")
-    end
     for index, spot in ipairs({ { 0.44, 12 }, { 0.51, 32 }, { 0.58, 14 }, { 0.65, 34 }, { 0.72, 10 } }) do
         local pixel = Draw.Box("Frame", { Position = UDim2.new(spot[1], 0, 0, spot[2]),
             Size = UDim2.fromOffset(index % 2 == 0 and 4 or 8, index % 2 == 0 and 4 or 8),
@@ -3806,27 +3815,17 @@ function Window:BuildDecor(topbar)
 end
 
 function Window:RenderDecor()
-    local wide = self.Size and self.Size.X >= 700
+    local wide = false -- keep the interactive header free of moving decoration
     for _, pixel in ipairs(self.Stars) do
         pixel.Visible = wide and State.AnimationIntensity ~= "Low"
     end
 end
 
 function Window:BuildTitle(parent)
-    local holder = Draw.New("Frame", { BackgroundTransparency = 1, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 26), LayoutOrder = 1, Parent = parent })
-    Draw.List(holder, 1, true, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
-    self.Letters = {}
-    local size = Config.Text.Title
-    local index = 0
-    for char in self.Title:upper():gmatch(utf8.charpattern) do
-        local bounds = Layout.Measure(char, size, "Logo", 200)
-        local slot = Draw.New("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(char == " " and size * 0.3 or bounds.X, size + 4), LayoutOrder = #self.Letters + 1, Parent = holder })
-        local letter = Draw.Text({ Text = char, Size = UDim2.fromScale(1, 1), TextXAlignment = Enum.TextXAlignment.Center, Parent = slot }, "Logo", size, Config.TitleColors[index % #Config.TitleColors + 1])
-        Draw.Stroke(letter, "Ink", 2)
-        table.insert(self.Letters, letter)
-        index += char == " " and 0 or 1
-    end
-    self.TitleHolder = holder
+    local holder=Draw.New("Frame",{BackgroundTransparency=1,Size=UDim2.fromOffset(118,26),LayoutOrder=1,Parent=parent})
+    local label=Draw.Text({Text=self.Title,Size=UDim2.fromScale(1,1),TextTruncate=Enum.TextTruncate.AtEnd,Parent=holder},"Logo",18,"TopbarText")
+    self.Letters={label}
+    self.TitleHolder=holder
 end
 
 function Window:WaveTitle()
@@ -3837,12 +3836,10 @@ function Window:WaveTitle()
     end
 end
 
-function Window:BuildPill(parent, text)
-    local pill = Draw.Box("Frame", { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 22), LayoutOrder = 2, Parent = parent }, "Shadow", nil, UDim.new(1, 0))
-    pill.BackgroundTransparency = 0.45
-    Draw.Padding(pill, 0, 10, 0, 10)
-    Draw.Text({ AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromScale(0, 1), Parent = pill }, "Body", Util.TextSize("Small"), "TopbarText", text)
-    pill.Visible = text ~= ""
+function Window:BuildPill(parent,text)
+    local pill=Draw.New("Frame",{BackgroundTransparency=1,Size=UDim2.fromOffset(230,22),LayoutOrder=2,ClipsDescendants=true,Parent=parent})
+    Draw.Text({Size=UDim2.fromScale(1,1),TextTruncate=Enum.TextTruncate.AtEnd,Parent=pill},"Desc",11,"SubText",text)
+    pill.Visible=text~=""
     return pill
 end
 
@@ -3897,17 +3894,17 @@ function Window:BuildSidebar()
     if self.Navigation == "Chunky" then
         self.Sidebar=Draw.Box("Frame",{Name="BlockNavigation",Position=UDim2.fromOffset(0,Config.Window.Topbar),Parent=self.Body},"PanelHeader")
         Draw.Box("Frame",{Position=UDim2.new(0,0,1,-3),Size=UDim2.new(1,0,0,3),Parent=self.Sidebar},"Outline")
-        self.TabScroll=Draw.New("ScrollingFrame",{Name="HorizontalTabs",BackgroundTransparency=1,BorderSizePixel=0,Position=UDim2.fromOffset(46,8),ScrollingDirection=Enum.ScrollingDirection.X,ScrollBarThickness=3,CanvasSize=UDim2.new(),CanvasPosition=Vector2.new(0,0),ElasticBehavior=Enum.ElasticBehavior.WhenScrollable,ClipsDescendants=true,Parent=self.Sidebar})
+        self.TabScroll=Draw.New("ScrollingFrame",{Name="HorizontalTabs",BackgroundTransparency=1,BorderSizePixel=0,Position=UDim2.fromOffset(40,6),ScrollingDirection=Enum.ScrollingDirection.X,ScrollBarThickness=3,CanvasSize=UDim2.new(),CanvasPosition=Vector2.new(0,0),ElasticBehavior=Enum.ElasticBehavior.WhenScrollable,ClipsDescendants=true,Parent=self.Sidebar})
         Theme.Bind(self.TabScroll,{ScrollBarImageColor3="Coin"})
         self.TabList=Container.New(self.TabScroll,{Window=self})
         self.TabList.Layout=function(list) Layout.Dirty[list]=nil;self:LayoutBlockTabs() end
         local function arrow(text,x)
-            local button=Draw.Box("TextButton",{Position=x,Size=UDim2.fromOffset(30,42),Parent=self.Sidebar},"Element","Outline",3,2)
+            local button=Draw.Box("TextButton",{Position=x,Size=UDim2.fromOffset(28,36),Parent=self.Sidebar},"Element","Outline",3,2)
             Draw.Text({Text=text,Size=UDim2.fromScale(1,1),TextXAlignment=Enum.TextXAlignment.Center,Parent=button},"Logo",16,"Coin")
             return button
         end
-        self.TabPrev=arrow("<",UDim2.fromOffset(8,15))
-        self.TabNext=arrow(">",UDim2.new(1,-38,0,15))
+        self.TabPrev=arrow("<",UDim2.fromOffset(6,10))
+        self.TabNext=arrow(">",UDim2.new(1,-34,0,10))
         self.TabPrev.Activated:Connect(function() self:ScrollTabs(-180) end)
         self.TabNext.Activated:Connect(function() self:ScrollTabs(180) end)
         self.TabScroll:GetPropertyChangedSignal("CanvasPosition"):Connect(function() self:UpdateTabArrows() end)
@@ -4050,7 +4047,7 @@ function Window:BuildGround()
         Draw.Box("Frame", { Position = UDim2.fromOffset(12 + (index - 1) * 10, 10),
             Size = UDim2.fromOffset(6, 6), Parent = ground }, Config.TitleColors[index])
     end
-    Draw.Text({ Text = "PixeL UI " .. Library.Version .. " / Jeaneism / 0x4.me", Position = UDim2.fromOffset(60, 4),
+    self.FooterBrand = Draw.Text({ Text = "PixeL UI " .. Library.Version .. " / Jeaneism / 0x4.me", Position = UDim2.fromOffset(60, 4),
         Size = UDim2.new(1, -100, 1, -6), TextTruncate = Enum.TextTruncate.AtEnd, Parent = ground },
         "Desc", 11, "SubText")
     self.Ground = ground
@@ -4105,21 +4102,21 @@ end
 
 -- One row of raised blocks; labels never collapse into an icon-only menu.
 function Window:LayoutBlockTabs()
-    local available=math.max(1,self.Size.X-92)
-    local height=self.Size.Y<400 and 54 or 62
-    self.NavHeight=height+20
+    local available=math.max(1,self.Size.X-80)
+    local height=State.Touch and 44 or 40
+    self.NavHeight=height+16
     self.Sidebar.Size=UDim2.fromOffset(self.Size.X,self.NavHeight)
     self.TabScroll.Size=UDim2.fromOffset(available,height+5)
     local x=4
     for index,tab in ipairs(self.Tabs) do
         local labelWidth=Layout.Measure(Lang.Resolve(tab.Name),Fonts.Size("Body",13),"Body",300).X
-        local width=math.clamp(labelWidth+64,126,220)
+        local width=math.clamp(labelWidth+48,104,188)
         tab.Button.Position=UDim2.fromOffset(x,2)
         tab.Button.Size=UDim2.fromOffset(width,height-4)
         tab.Button.Visible=true
         tab.NavX,tab.NavWidth=x,width
         tab:ApplyCompact(false)
-        x+=width+10
+        x+=width+8
     end
     self.NavContentWidth=x
     self.NavViewportWidth=available
@@ -4179,6 +4176,7 @@ function Window:ApplyLayout()
         for _,tab in ipairs(self.Tabs) do tab.PendingWidth=width end
         if self.ActiveTab then self.ActiveTab:ApplyWidth() end
         self:ApplyChrome(width,height)
+        Watermark.SetVisible(Watermark.Enabled)
         self:ApplyAccent()
         self:RevealBlockTab()
         return
@@ -4236,22 +4234,22 @@ end
 
 function Window:ApplyChrome(width, height)
     if self.Navigation == "Chunky" then
-        local narrow=width<600 or State.Touch
+        local narrow=width<600
         local short=height<430
-        local header=short and 42 or (narrow and 98 or Config.Window.Header)
+        local header=short and 46 or (narrow and 98 or 62)
         self.UserCard.Visible=false
-        self.TitleHolder.Visible=width>=340
-        self.SubtitlePill.Visible=self.SubTitle~="" and width>=760
+        self.TitleHolder.Visible=width>=400
+        self.SubtitlePill.Visible=self.SubTitle~="" and width>=700
         self.Emblem.Visible=true
         self:RenderDecor()
         self.HeaderTitle.Position=UDim2.fromOffset(16,8)
-        self.HeaderTitle.Size=UDim2.new(1,(narrow and not short) and -32 or (short and -180 or -244),0,26)
-        self.HeaderDesc.Visible=height>=400
+        self.HeaderTitle.Size=UDim2.new(1,(narrow and not short) and -32 or (short and -180 or -224),0,24)
+        self.HeaderDesc.Visible=not short
         self.HeaderDesc.Position=UDim2.fromOffset(16,36)
-        self.HeaderDesc.Size=UDim2.new(1,narrow and -32 or -244,0,16)
+        self.HeaderDesc.Size=UDim2.new(1,(narrow and not short) and -32 or -224,0,16)
         self.SearchField.AnchorPoint=Vector2.new(narrow and not short and 0 or 1,narrow and not short and 0 or 0.5)
         self.SearchField.Position=narrow and not short and UDim2.fromOffset(14,58) or UDim2.new(1,-16,0,header/2)
-        self.SearchField.Size=short and UDim2.fromOffset(140,Util.Metric("Box")) or (narrow and UDim2.new(1,-28,0,Util.Metric("Box")) or UDim2.fromOffset(200,Util.Metric("Box")))
+        self.SearchField.Size=short and UDim2.fromOffset(140,Util.Metric("Box")) or (narrow and UDim2.new(1,-28,0,Util.Metric("Box")) or UDim2.fromOffset(180,Util.Metric("Box")))
         self.PageHost.Position=UDim2.fromOffset(0,header)
         self.PageHost.Size=UDim2.new(1,0,1,-header)
         return
@@ -4460,14 +4458,14 @@ end
 function Tab:BuildButton()
     if self.Window.Navigation=="Chunky" then
         local holder=Draw.New("TextButton",{Name="BlockTab",Text="",AutoButtonColor=false,BackgroundTransparency=1})
-        local shade=Draw.Box("Frame",{Position=UDim2.fromOffset(0,6),Size=UDim2.new(1,0,1,-6),Parent=holder},"Shadow","Outline",4,2)
-        local face=Draw.Box("Frame",{Size=UDim2.new(1,0,1,-6),Parent=holder},"Element",nil,4)
-        local stroke=Draw.Stroke(face,"Outline",2,true)
+        local shade=Draw.Box("Frame",{Position=UDim2.fromOffset(0,3),Size=UDim2.new(1,0,1,-3),Parent=holder},"Shadow",nil,5)
+        local face=Draw.Box("Frame",{Size=UDim2.new(1,0,1,-3),Parent=holder},"Panel",nil,5)
+        local stroke=Draw.Stroke(face,"Outline",1,true)
         Draw.Box("Frame",{Position=UDim2.fromOffset(3,3),Size=UDim2.new(1,-6,0,2),BackgroundTransparency=0.65,Parent=face},"White")
-        self.IconSlot=Draw.Box("Frame",{AnchorPoint=Vector2.new(0,0.5),Position=UDim2.new(0,8,0.5,0),Size=UDim2.fromOffset(32,32),Parent=face},"Backdrop","Outline",3,1)
-        Sprite.New(self.IconSlot,self.Icon,24).Position=UDim2.fromOffset(4,4)
-        self.Label=Draw.Text({Position=UDim2.fromOffset(48,0),Size=UDim2.new(1,-56,1,-3),TextTruncate=Enum.TextTruncate.AtEnd,Parent=face},"Body",13,"Text",self.Name)
-        self.Marker=Draw.Box("Frame",{Position=UDim2.new(0,48,1,-5),Size=UDim2.new(1,-58,0,3),Visible=false,Parent=face},"Ink",nil,1)
+        self.IconSlot=Draw.Box("Frame",{AnchorPoint=Vector2.new(0,0.5),Position=UDim2.new(0,8,0.5,0),Size=UDim2.fromOffset(26,26),Parent=face},"Element",nil,4)
+        Sprite.New(self.IconSlot,self.Icon,20).Position=UDim2.fromOffset(3,3)
+        self.Label=Draw.Text({Position=UDim2.fromOffset(40,0),Size=UDim2.new(1,-48,1,-3),TextTruncate=Enum.TextTruncate.AtEnd,Parent=face},"Body",13,"Text",self.Name)
+        self.Marker=Draw.Box("Frame",{Position=UDim2.new(0,40,1,-4),Size=UDim2.new(1,-48,0,2),Visible=false,Parent=face},self.ColorToken,nil,1)
         self.Button,self.Face,self.Shade,self.Stroke=holder,face,shade,stroke
         holder.MouseEnter:Connect(function() self.Hovered=not State.Touch;self:RenderButton() end)
         holder.MouseLeave:Connect(function() self.Hovered=false;self.Pressed=false;self:RenderButton() end)
@@ -4514,11 +4512,11 @@ function Tab:RenderButton(instant)
     local active = self.Window.ActiveTab == self
     local duration = instant and 0 or Config.Tween.Normal
     if self.Window.Navigation=="Chunky" then
-        Theme.Bind(self.Face,{BackgroundColor3=active and self.ColorToken or (self.Hovered and "Hover" or "Element")})
-        Theme.Bind(self.Label,{TextColor3=active and "Ink" or "Text"})
+        Theme.Bind(self.Face,{BackgroundColor3=active and "Hover" or (self.Hovered and "Element" or "Panel")})
+        Theme.Bind(self.Label,{TextColor3=active and self.ColorToken or "SubText"})
         Theme.Bind(self.Stroke,{Color=active and self.ColorToken or "Outline"})
         self.Marker.Visible=active
-        Anim.Tween(self.Face,{Position=UDim2.fromOffset(0,self.Pressed and 5 or (active and 2 or (self.Hovered and -1 or 0)))},duration)
+        Anim.Tween(self.Face,{Position=UDim2.fromOffset(0,self.Pressed and 2 or (self.Hovered and -1 or 0))},duration)
         return
     end
     local faceAlpha = active and 0 or (self.Hovered and 0.8 or 1)
@@ -4568,7 +4566,7 @@ end
 function Tab:ApplyColumns(pageWidth)
     self.PageWidth = pageWidth or self.PageWidth or 0
     local hasLeft, hasRight = #self.Left.Items > 0, #self.Right.Items > 0
-    local single = State.Touch or self.PageWidth < Config.Window.TwoColumnMin or not hasLeft or not hasRight
+    local single = self.PageWidth < Config.Window.TwoColumnMin or not hasLeft or not hasRight
     self.LeftItem.Hidden = not hasLeft
     self.RightItem.Hidden = not hasRight
     self.LeftItem.Width = (not single) and 0.5 or nil
@@ -4620,14 +4618,12 @@ function Groupbox:BuildHeader(card, info)
     local bar = Draw.Box("TextButton", { Name = "Header", Size = UDim2.new(1, 0, 0, height), Parent = card }, "PanelHeader", nil, radius)
     Draw.Box("Frame", { Position = UDim2.new(0, 0, 1, -radius), Size = UDim2.new(1, 0, 0, radius), Parent = bar }, "PanelHeader")
     Draw.Box("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, 2), ZIndex = 2, Parent = bar }, "Outline")
-    Draw.Box("Frame",{Position=UDim2.fromOffset(4,4),Size=UDim2.fromOffset(3,3),Parent=bar},"Coin")
-    Draw.Box("Frame",{Position=UDim2.new(1,-7,0,4),Size=UDim2.fromOffset(3,3),Parent=bar},"Coin")
     local offset = 12
     if info.Icon then
-        local icon = Sprite.New(bar, info.Icon, 32)
+        local icon = Sprite.New(bar, info.Icon, 24)
         icon.AnchorPoint = Vector2.new(0, 0.5)
         icon.Position = UDim2.new(0, 10, 0.5, -1)
-        offset = 48
+        offset = 40
     end
     local badgeWidth = 0
     if info.Badge then
@@ -4649,7 +4645,7 @@ function Groupbox:SetCollapsed(collapsed)
 end
 
 function Float.Build()
-    local size = State.Touch and 56 or 48
+    local size = State.Touch and 44 or 36
     local button = Draw.New("TextButton", { Name = "Float", Text = "", AutoButtonColor = false, BackgroundTransparency = 1, Position = UDim2.new(0, 18, 0.45, 0), Size = UDim2.fromOffset(size, size), ZIndex = Config.Layer.Float, Visible = State.Touch, Parent = State.Gui })
     local shadow = Draw.Box("Frame", { Position = UDim2.fromOffset(4, 4), Size = UDim2.fromScale(1, 1), BackgroundTransparency = 0.55, Parent = button }, "Shadow", nil, 4)
     shadow.ZIndex = 1
@@ -4680,13 +4676,18 @@ function Float.Build()
 end
 
 function Float.Render()
-    if not Float.Slot then
-        return
+    if not Float.Slot or Float.Sprite then return end
+    local badge=Draw.Box("Frame",{Size=UDim2.fromScale(1,1),Parent=Float.Slot},"Panel","Track",8,1)
+    local mark=Draw.New("Frame",{BackgroundTransparency=1,AnchorPoint=Vector2.new(0.5,0.5),Position=UDim2.fromScale(0.5,0.5),Size=UDim2.fromOffset(24,28),Parent=badge})
+    local rows={"111110","110011","110011","111110","110000","110000","110000"}
+    for y,row in ipairs(rows) do
+        for x=1,#row do
+            if row:sub(x,x)=="1" then
+                Draw.Box("Frame",{Position=UDim2.fromOffset((x-1)*4,(y-1)*4),Size=UDim2.fromOffset(3,3),Parent=mark},"Accent")
+            end
+        end
     end
-    if not Float.Sprite then
-        Float.Sprite = Sprite.New(Float.Slot, "qblock", Float.Size)
-        Float.Sprite.Name = "Block"
-    end
+    Float.Sprite=badge
 end
 
 function Float.SetVisible(visible)
@@ -4696,31 +4697,16 @@ function Float.SetVisible(visible)
 end
 
 function Watermark.Build(title)
-    local frame = Draw.Box("Frame", { Name = "Watermark", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 10), AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 30), ZIndex = Config.Layer.Watermark, Parent = State.Gui }, "Shadow", "Outline", 10, 2)
-    frame.BackgroundTransparency = 0.25
-    Draw.Padding(frame, 0, 12, 0, 8)
-    Draw.List(frame, 10, true, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
-    local slot = Draw.New("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(18, 18), LayoutOrder = 1, Parent = frame })
-    local coin = Sprite.New(slot, "crystal", 16)
-    coin.AnchorPoint = Vector2.new(0.5, 0)
-    coin.Position = UDim2.fromScale(0.5, 0)
-    Anim.Tween(coin, { Size = UDim2.fromOffset(3, 18) }, 0.45, "Sine", -1, true)
-    local name = Draw.Text({ Text = title:upper(), AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), LayoutOrder = 2, Parent = frame }, "Logo", Config.Text.Watermark + 1, "Coin")
-    Draw.Stroke(name, "Ink", 1.5)
-    Watermark.Stats = {}
-    for index, key in ipairs({ "Fps", "Ping", "Time" }) do
-        Watermark.Stats[key] = Draw.Text({ AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), LayoutOrder = 2 + index, Parent = frame }, "Body", Config.Text.Watermark, "White")
+    local window=State.Window
+    local frame=Draw.New("Frame",{Name="SessionMetrics",BackgroundTransparency=1,AnchorPoint=Vector2.new(1,0.5),Position=UDim2.new(1,-30,0.5,0),Size=UDim2.fromOffset(238,18),Parent=window.Ground})
+    Draw.List(frame,8,true,Enum.HorizontalAlignment.Right,Enum.VerticalAlignment.Center)
+    Watermark.Stats={}
+    for _,key in ipairs({"Fps","Ping","Time"}) do
+        Watermark.Stats[key]=Draw.Text({AutomaticSize=Enum.AutomaticSize.X,Size=UDim2.fromOffset(0,18),Parent=frame},"Desc",10,"Muted")
     end
-    Watermark.Frame = frame
-    Gui.Draggable(frame, function(begin, delta)
-        if not delta then
-            return frame.Position
-        end
-        frame.Position = begin + UDim2.fromOffset(delta.X, delta.Y)
-        return begin
-    end)
-    Watermark.Update()
-    Util.Every(0.5, Watermark.Update)
+    Watermark.Frame=frame
+    Watermark.Enabled=false
+    Util.Every(0.5,Watermark.Update)
 end
 
 function Watermark.Update()
@@ -4737,8 +4723,12 @@ function Watermark.Update()
 end
 
 function Watermark.SetVisible(visible)
+    Watermark.Enabled=visible==true
     if Watermark.Frame then
-        Watermark.Frame.Visible = visible
+        Watermark.Frame.Visible=Watermark.Enabled and State.Window.Size.X>=660
+        if State.Window.FooterBrand then
+            State.Window.FooterBrand.Size=UDim2.new(1,Watermark.Frame.Visible and -332 or -100,1,-6)
+        end
         Watermark.Update()
     end
 end
@@ -4859,151 +4849,101 @@ end
 
 
 -- หน้าโหลด: ฉากด่านย่อส่วน เห็ดวิ่งบนพื้นเป็นแถบความคืบหน้า แต่ละขั้นผูกกับงานจริง (โหลดฟอนต์ / สร้างเมนู)
-Intro.Width, Intro.Height, Intro.Ground = 600, 320, 44
-Intro.MinStep = 0.22
-Intro.Duration = 7.5
-Intro.StepTimeout = 15
+Intro.Width, Intro.Height = 480, 294
+Intro.Duration, Intro.StepTimeout = 7.5, 15
 
---@param settings { Title, SubTitle, Steps = { { Label, Run } }, OnDone }
+-- Original PixeL UI opening: a pixel monogram assembling into a clean studio mark.
 function Intro.Play(settings)
-    local screen = Draw.New("Frame", { Name = "Loader", BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = Config.Layer.Intro, Parent = State.Gui })
-    local ok = Util.Try(Intro.Show, settings, screen)
+    local screen=Draw.New("Frame",{Name="PixelOpening",BackgroundColor3=Color3.new(0,0,0),BackgroundTransparency=1,Size=UDim2.fromScale(1,1),ZIndex=Config.Layer.Intro,Parent=State.Gui})
+    local ok=Util.Try(Intro.Show,settings,screen)
     screen:Destroy()
-    if Library.Unloaded then
-        return
-    end
-    if not ok and not settings.Ran then
-        Intro.RunSteps(settings, nil)
-    end
+    if Library.Unloaded then return end
+    if not ok and not settings.Ran then Intro.RunSteps(settings,nil) end
     Util.Try(settings.OnDone)
 end
 
-function Intro.Show(settings, screen)
+function Intro.FitScale(viewport)
+    return math.max(0.1,math.min(State.UserScale,(viewport.X-32)/(Intro.Width+6),(viewport.Y-32)/(Intro.Height+6)))
+end
+
+function Intro.Show(settings,screen)
     settings.StartTime=os.clock()
-    Anim.Tween(screen, { BackgroundTransparency = 0.35 }, 0.3)
-    local card, scene, scale = Intro.BuildCard(screen)
+    Anim.Tween(screen,{BackgroundTransparency=0.3},0.25)
+    local card,scene,scale=Intro.BuildCard(screen)
     Intro.BuildScenery(scene)
-    local block = Sprite.New(scene, "qblock", 48)
-    block.AnchorPoint = Vector2.new(0.5, 0)
-    block.Position = UDim2.new(0.5, 0, 0, -70)
-    local letters = Intro.Letters(scene, settings.Title)
-    local pill = Intro.Pill(scene, settings.SubTitle)
-    local track = Intro.Track(scene)
-    Anim.Tween(scale, { Scale = State.UserScale }, 0.45, "Back")
-    Anim.Tween(block, { Position = UDim2.new(0.5, 0, 0, 22) }, 0.4, "Bounce")
-    task.wait(0.42)
-    Intro.HitBlock(scene, block)
-    Intro.DropLetters(letters, pill)
-    Intro.RunSteps(settings, track)
-    if Library.Unloaded then
-        return
-    end
-    Intro.Finale(scene, track)
-    task.wait(0.3)
-    Anim.Tween(scale, { Scale = State.UserScale * 1.06 }, 0.2, "In")
-    Anim.Tween(card, { GroupTransparency = 1 }, 0.2)
-    Anim.Tween(screen, { BackgroundTransparency = 1 }, 0.2)
-    task.wait(0.2)
+    Draw.Text({Text=settings.Title or "PixeL UI",Position=UDim2.fromOffset(20,102),Size=UDim2.new(1,-40,0,34),TextXAlignment=Enum.TextXAlignment.Center,Parent=scene},"Logo",28,"Text")
+    Draw.Text({Position=UDim2.fromOffset(20,140),Size=UDim2.new(1,-40,0,18),TextXAlignment=Enum.TextXAlignment.Center,TextTruncate=Enum.TextTruncate.AtEnd,Parent=scene},"Desc",12,"SubText",settings.SubTitle or "Jeaneism · 0x4.me")
+    local track=Intro.Track(scene)
+    Anim.Tween(scale,{Scale=Intro.FitScale(State.Gui.AbsoluteSize)},0.25,"Out")
+    task.wait(0.25)
+    Intro.RunSteps(settings,track)
+    if Library.Unloaded then return end
+    Intro.SetPhase(track,4,true)
+    Lang.Bind(track.Status,{EN="Your workspace is ready",ID="Ruang kerjamu siap",TH="พื้นที่ทำงานพร้อมแล้ว"})
+    task.wait(0.25)
+    Anim.Tween(card,{GroupTransparency=1},0.25)
+    Anim.Tween(screen,{BackgroundTransparency=1},0.25)
+    task.wait(0.25)
 end
 
 function Intro.BuildCard(screen)
-    local width, height = Intro.Width, Intro.Height
-    local card = Draw.New("CanvasGroup", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(width + 6, height + 6), BackgroundTransparency = 1, Parent = screen })
-    local scale = Draw.New("UIScale", { Scale = State.UserScale * 0.6, Parent = card })
-    Draw.Box("Frame", { Position = UDim2.fromOffset(6, 6), Size = UDim2.fromOffset(width, height), Parent = card }, "Shadow", nil, 18)
-    local scene = Draw.Box("Frame", { Size = UDim2.fromOffset(width, height), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0, ClipsDescendants = true, Parent = card }, nil, nil, 18)
-    local gradient = Draw.New("UIGradient", { Rotation = 90, Color = ColorSequence.new(Theme.Colors.Topbar, Theme.Colors.Backdrop), Parent = scene })
-    gradient.Enabled = true
-    local border = Draw.New("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(width, height), ZIndex = 20, Parent = card })
-    Draw.Corner(border, 18)
-    Draw.Stroke(border, "Outline", 3, true)
-    return card, scene, scale
+    local card=Draw.New("CanvasGroup",{Name="PixelStudioOpening",AnchorPoint=Vector2.new(0.5,0.5),Position=UDim2.fromScale(0.5,0.5),Size=UDim2.fromOffset(Intro.Width+6,Intro.Height+6),BackgroundTransparency=1,Parent=screen})
+    local target=Intro.FitScale(State.Gui.AbsoluteSize)
+    local scale=Draw.New("UIScale",{Scale=target*0.94,Parent=card})
+    Draw.Box("Frame",{Position=UDim2.fromOffset(4,4),Size=UDim2.fromOffset(Intro.Width,Intro.Height),Parent=card},"Shadow",nil,10)
+    local scene=Draw.Box("Frame",{Size=UDim2.fromOffset(Intro.Width,Intro.Height),ClipsDescendants=true,Parent=card},"Backdrop","Track",10,1)
+    Draw.Box("Frame",{Position=UDim2.fromOffset(20,18),Size=UDim2.fromOffset(24,3),Parent=scene},"Accent",nil,1)
+    Draw.Text({Text="PIXeL / 1.2",Position=UDim2.new(1,-120,0,12),Size=UDim2.fromOffset(100,16),TextXAlignment=Enum.TextXAlignment.Right,Parent=scene},"Desc",10,"Muted")
+    return card,scene,scale
 end
 
 function Intro.BuildScenery(scene)
-    for index = 1, 12 do
-        local pixel = Draw.Box("Frame", { Position = UDim2.new(index / 13, 0, 0, 20 + index % 3 * 28),
-            Size = UDim2.fromOffset(4, 4), BackgroundTransparency = 0.6, ZIndex = 1, Parent = scene },
-            Config.TitleColors[index % 4 + 1])
-        Anim.Tween(pixel, { Position = pixel.Position - UDim2.fromOffset(0, 8) },
-            1 + index * 0.12, "Sine", -1, true)
+    local mark=Draw.Box("Frame",{Name="OriginalPixelMonogram",AnchorPoint=Vector2.new(0.5,0),Position=UDim2.new(0.5,0,0,34),Size=UDim2.fromOffset(58,58),Parent=scene},"Panel",nil,9)
+    local pixels={"1111100","1100110","1100110","1111100","1100000","1100000","1100000"}
+    local n=0
+    for y,row in ipairs(pixels) do
+        for x=1,#row do
+            if row:sub(x,x)=="1" then
+                n+=1
+                local pixel=Draw.Box("Frame",{Name="MarkPixel",Position=UDim2.fromOffset(11+(x-1)*5,8+(y-1)*6),Size=UDim2.fromOffset(4,5),BackgroundTransparency=1,Parent=mark},x>3 and "Coin" or "Accent")
+                Anim.Tween(pixel,{BackgroundTransparency=0},0.18,"Out",0,false,n*0.025)
+            end
+        end
     end
-    local floor = Draw.Box("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1),
-        Size = UDim2.new(1, 0, 0, Intro.Ground), ZIndex = 3, Parent = scene }, "PanelHeader")
-    Draw.Box("Frame", { Size = UDim2.new(1, 0, 0, 4), ZIndex = 4, Parent = floor }, "Blue")
-    for index = 1, 24 do
-        Draw.Box("Frame", { Position = UDim2.fromOffset(index * 24 - 12, 16),
-            Size = UDim2.fromOffset(8, 8), ZIndex = 4, Parent = floor }, Config.TitleColors[index % 4 + 1])
-    end
-end
-
-function Intro.Letters(scene, title)
-    local row = Draw.New("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 92), Size = UDim2.fromOffset(Intro.Width, 54), ZIndex = 5, Parent = scene })
-    Draw.List(row, 2, true, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center)
-    local letters = {}
-    local size, colorIndex = 46, 0
-    for char in tostring(title):upper():gmatch(utf8.charpattern) do
-        local bounds = Layout.Measure(char, size, "Logo", 300)
-        local slot = Draw.New("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(char == " " and 14 or bounds.X, size + 8), LayoutOrder = #letters + 1, ZIndex = 5, Parent = row })
-        local letter = Draw.Text({ Text = char, Size = UDim2.fromScale(1, 1), Position = UDim2.fromOffset(0, -140), TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 5, Parent = slot }, "Logo", size, Config.TitleColors[colorIndex % #Config.TitleColors + 1])
-        Draw.Stroke(letter, "Ink", 3)
-        table.insert(letters, letter)
-        colorIndex += char == " " and 0 or 1
-    end
-    return letters
-end
-
-function Intro.Pill(scene, text)
-    local pill = Draw.Box("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 156), AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 26), BackgroundTransparency = 1, ZIndex = 5, Parent = scene }, "Shadow", nil, UDim.new(1, 0))
-    Draw.Padding(pill, 0, 14, 0, 14)
-    local label = Draw.Text({ Text = "READY / START" .. ((text and text ~= "") and ("  ·  " .. text) or ""), AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromScale(0, 1), TextTransparency = 1, ZIndex = 6, Parent = pill }, "Body", 14, "White")
-    return { Frame = pill, Label = label }
+    Draw.Box("Frame",{Position=UDim2.new(1,-5,1,-5),Size=UDim2.fromOffset(7,7),Parent=mark},"Coin",nil,1)
+    return mark
 end
 
 function Intro.Track(scene)
-    local ground = Intro.Ground
-    local status = Draw.Text({ Position = UDim2.new(0, 22, 1, -(ground + 58)), Size = UDim2.new(1, -120, 0, 20), ZIndex = 6, Parent = scene }, "Body", 15, "White")
-    Draw.Stroke(status, "Ink", 1.5)
-    local percent = Draw.Text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -22, 1, -(ground + 60)), Size = UDim2.fromOffset(80, 22), TextXAlignment = Enum.TextXAlignment.Right, Text = "0%", ZIndex = 6, Parent = scene }, "Logo", 20, "Coin")
-    Draw.Stroke(percent, "Ink", 2)
-    local flag = Sprite.New(scene, "flag", 32)
-    flag.AnchorPoint = Vector2.new(1, 1)
-    flag.Position = UDim2.new(1, -18, 1, -ground)
-    flag.ZIndex = 5
-    local runner = Draw.New("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 18, 1, -ground), Size = UDim2.fromOffset(28, 28), ZIndex = 6, Parent = scene })
-    local body = Sprite.New(runner, "robot-work", 24)
-    body.Position = UDim2.fromOffset(2, 4)
-    Anim.Tween(body, { Position = UDim2.fromOffset(2, 0) }, 0.16, "Sine", -1, true)
-    local rail=Draw.Box("Frame",{Position=UDim2.new(0,22,1,-(ground+31)),Size=UDim2.new(1,-44,0,10),ZIndex=7,Parent=scene},"Track","Outline",3,1)
-    local fill=Draw.Box("Frame",{Size=UDim2.fromScale(0,1),ZIndex=8,Parent=rail},"Blue",nil,3)
-    local progress = Draw.New("NumberValue", { Value = 0 })
+    local status=Draw.Text({Position=UDim2.fromOffset(24,174),Size=UDim2.new(1,-106,0,20),Parent=scene},"Body",12,"SubText")
+    local percent=Draw.Text({Text="0%",Position=UDim2.new(1,-78,0,174),Size=UDim2.fromOffset(54,20),TextXAlignment=Enum.TextXAlignment.Right,Parent=scene},"Strong",13,"Accent")
+    local rail=Draw.Box("Frame",{Position=UDim2.fromOffset(24,202),Size=UDim2.new(1,-48,0,6),Parent=scene},"Track",nil,3)
+    local fill=Draw.Box("Frame",{Size=UDim2.fromScale(0,1),Parent=rail},"Accent",nil,3)
+    local phases={}
+    local labels={{EN="Interface",ID="Antarmuka",TH="หน้าต่าง"},{EN="Icons",ID="Ikon",TH="ไอคอน"},{EN="Workspace",ID="Ruang kerja",TH="พื้นที่ทำงาน"},{EN="Ready",ID="Siap",TH="พร้อม"}}
+    for i,label in ipairs(labels) do
+        local cell=Draw.New("Frame",{BackgroundTransparency=1,Position=UDim2.fromOffset(24+(i-1)*110,224),Size=UDim2.fromOffset(104,22),Parent=scene})
+        local dot=Draw.Box("Frame",{Position=UDim2.fromOffset(0,8),Size=UDim2.fromOffset(5,5),Parent=cell},"Muted",nil,1)
+        local text=Draw.Text({Position=UDim2.fromOffset(12,0),Size=UDim2.new(1,-12,1,0),TextTruncate=Enum.TextTruncate.AtEnd,Parent=cell},"Desc",10,"Muted",label)
+        phases[i]={Dot=dot,Label=text}
+    end
+    Draw.Text({Text="Jeaneism  /  0x4.me",Position=UDim2.fromOffset(24,262),Size=UDim2.new(1,-48,0,16),TextXAlignment=Enum.TextXAlignment.Center,Parent=scene},"Desc",10,"Muted")
+    local progress=Draw.New("NumberValue",{Value=0,Parent=scene})
     progress.Changed:Connect(function(value)
         fill.Size=UDim2.fromScale(value,1)
-        percent.Text = math.floor(value * 100 + 0.5) .. "%"
-        runner.Position = UDim2.new(0, 18 + (Intro.Width - 100) * value, 1, -ground)
+        percent.Text=math.floor(value*100+0.5).."%"
     end)
-    return { Status = status, Progress = progress, Flag = flag, Runner = runner }
+    return {Status=status,Progress=progress,Phases=phases,Fill=fill,Percent=percent}
 end
 
-function Intro.HitBlock(scene, block)
-    Anim.Bump(block, 14)
-    Anim.CoinPop(scene, UDim2.new(0.5, 0, 0, 22), 32)
-    task.delay(0.1, function()
-        local used = Sprite.New(scene, "used", 48)
-        used.AnchorPoint, used.Position, used.ZIndex = block.AnchorPoint, UDim2.new(0.5, 0, 0, 22), block.ZIndex
-        block:Destroy()
-    end)
-end
-
-function Intro.DropLetters(letters, pill)
-    for index, letter in ipairs(letters) do
-        Anim.Tween(letter, { Position = UDim2.new() }, 0.55, "Bounce", 0, false, index * 0.05)
+function Intro.SetPhase(track,index,complete)
+    for i,phase in ipairs(track.Phases or {}) do
+        local token=(complete or i<index) and "Good" or (i==index and "Accent" or "Muted")
+        Theme.Bind(phase.Dot,{BackgroundColor3=token})
+        Theme.Bind(phase.Label,{TextColor3=token})
     end
-    Anim.Tween(pill.Frame, { BackgroundTransparency = 0.45 }, 0.3, "Out", 0, false, 0.4)
-    Anim.Tween(pill.Label, { TextTransparency = 0 }, 0.3, "Out", 0, false, 0.4)
 end
 
----@param track table?  nil = run the remaining steps without drawing
 function Intro.RunSteps(settings, track)
     local steps = settings.Steps
     for index, step in ipairs(steps) do
@@ -5014,7 +4954,7 @@ function Intro.RunSteps(settings, track)
             continue
         end
         step.Started = true
-        if track then track.Status.Text = Lang.Resolve(step.Label) end
+        if track then Lang.Bind(track.Status,step.Label);Intro.SetPhase(track,index,false) end
         local started = os.clock()
         if step.Run then
             Util.Await(Intro.StepTimeout, step.Run)
@@ -5032,22 +4972,6 @@ function Intro.RunSteps(settings, track)
         track.Progress.Value=index/#steps
     end
     settings.Ran = true
-end
-
-function Intro.Finale(scene, track)
-    Anim.Bump(track.Flag, 10)
-    local origin = UDim2.new(1, -36, 1, -(Intro.Ground + 30))
-    for index = 1, 8 do
-        local angle = math.rad(index * 45)
-        local star = Sprite.New(scene, "spark", 16)
-        star.AnchorPoint = Vector2.new(0.5, 0.5)
-        star.Position = origin
-        star.ZIndex = 7
-        local fly = Anim.Tween(star, { Position = origin + UDim2.fromOffset(math.cos(angle) * 70, math.sin(angle) * 70), Rotation = 180 }, 0.5, "Out")
-        fly.Completed:Once(function()
-            star:Destroy()
-        end)
-    end
 end
 
 -- ESP กลางของ UI วาดด้วย GUI ล้วน (ไม่พึ่ง Drawing) สคริปต์ส่งแค่ Provider ที่คืนรายการเป้า
@@ -6475,7 +6399,8 @@ function Library:CreateWindow(options)
     end
     State.Language = Lang.LanguageNames[language] and language or "EN"
     State.UserScale = math.clamp(options.Scale or 1, Config.ScaleRange.Min, Config.ScaleRange.Max)
-    Theme.Apply(options.Theme or "Citadel")
+    Theme.Apply(options.Theme or "Studio")
+    Particles.Enabled = options.Particles == true
     Assets.Configure(Config.DefaultAssets)
     Assets.Configure(options.Assets)
     Window.DetectTouch(options.Layout)
@@ -6495,7 +6420,7 @@ function Library:CreateWindow(options)
     window:SetAllOff(options.AllOff)
     Float.Build()
     Watermark.Build(options.WatermarkTitle or window.Title)
-    Watermark.SetVisible(options.Watermark ~= false)
+    Watermark.SetVisible(options.Watermark == true)
     Configs.SetFolder(options.ConfigFolder or (not options.Title and "Mario Hub" or window.Title))
     local function Build()
         if Library.Unloaded then
