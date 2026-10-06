@@ -1,4 +1,4 @@
--- Tara UI 3.0 · Pocket Arcade / Pixel Workshop
+-- PixeL UI 1.2 · Jeaneism · https://0x4.me
 -- Legacy option IDs and storage paths retained for saved-config compatibility.
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -13,7 +13,10 @@ local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
 local Library = {
-    Version = "3.0",
+    Name = "PixeL UI",
+    Version = "1.2",
+    Owner = "Jeaneism",
+    Website = "https://0x4.me",
     Options = {},
     Toggles = {},
     Unloaded = false,
@@ -246,7 +249,7 @@ local State = {
     KeyPickers = {},
     Connections = {},
     Tasks = {},
-    AnimationIntensity = "Extra",
+    AnimationIntensity = "Lively",
     ReduceMotion = false,
     UnloadHooks = {},
     Fps = 60,
@@ -319,7 +322,7 @@ function Util.Try(callback, ...)
     end
     local ok, message = pcall(callback, ...)
     if not ok then
-        warn("[Pixel Hub] " .. tostring(message))
+        warn("[PixeL UI] " .. tostring(message))
     end
     return ok, message
 end
@@ -601,7 +604,7 @@ function Anim.Burst(parent, origin, token)
     local now = os.clock()
     if now - (Anim.Bursts[parent] or -1) < 0.12 then return end
     Anim.Bursts[parent] = now
-    local count = State.AnimationIntensity == "Extra" and 8 or 4
+    local count = State.AnimationIntensity == "Lively" and 8 or 4
     for index = 1, count do
         local angle = math.rad(index * 360 / count)
         local pixel = Draw.Box("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = origin,
@@ -759,60 +762,230 @@ function Theme.OnRender(owner, render)
     Util.Try(render)
 end
 
+Lang.Translations = { EN = {}, ID = {}, TH = {} }
+Lang.LanguageNames = { EN = "English", ID = "Indonesia", TH = "ไทย" }
+Lang.Codes = { "EN", "ID", "TH" }
+Lang.Translations.ID["Search..."] = "Cari..."
+Lang.Translations.ID["Click again to confirm"] = "Klik lagi untuk konfirmasi"
+Lang.Translations.ID["None"] = "Tidak ada"
+Lang.Translations.ID["No matches"] = "Tidak ada hasil"
+Lang.Translations.ID["Settings"] = "Pengaturan"
+Lang.Translations.ID["Interface, language and configs"] = "Tampilan, bahasa, dan konfigurasi"
+Lang.Translations.ID["Interface"] = "Tampilan"
+Lang.Translations.ID["Language"] = "Bahasa"
+Lang.Translations.ID["Theme"] = "Tema"
+Lang.Translations.ID["UI scale"] = "Skala UI"
+Lang.Translations.ID["Menu key"] = "Tombol menu"
+Lang.Translations.ID["Watermark"] = "Label sesi"
+Lang.Translations.ID["Hub name, FPS, ping and play time"] = "Nama UI, FPS, ping, dan waktu bermain"
+Lang.Translations.ID["Mobile button"] = "Tombol HP"
+Lang.Translations.ID["Floating block that opens the menu"] = "Tombol melayang untuk membuka menu"
+Lang.Translations.ID["Configs"] = "Konfigurasi"
+Lang.Translations.ID["Config name"] = "Nama konfigurasi"
+Lang.Translations.ID["Saved configs"] = "Konfigurasi tersimpan"
+Lang.Translations.ID["Save"] = "Simpan"
+Lang.Translations.ID["Load"] = "Muat"
+Lang.Translations.ID["Delete"] = "Hapus"
+Lang.Translations.ID["Refresh"] = "Muat ulang"
+Lang.Translations.ID["Load on start"] = "Muat saat mulai"
+Lang.Translations.ID["Autoload: %s"] = "Muat otomatis: %s"
+Lang.Translations.ID["Type or select a config name first"] = "Ketik atau pilih nama konfigurasi terlebih dahulu"
+Lang.Translations.ID["This executor cannot save files"] = "Executor ini tidak dapat menyimpan file"
+Lang.Translations.ID["Config not found"] = "Konfigurasi tidak ditemukan"
+Lang.Translations.ID["Config file is damaged"] = "File konfigurasi rusak"
+Lang.Translations.ID["About"] = "Tentang"
+Lang.Translations.ID["Unload hub"] = "Tutup UI"
+Lang.Translations.ID["Rejoin"] = "Masuk ulang"
+Lang.Translations.ID["ENTER KEY"] = "MASUKKAN KUNCI"
+Lang.Translations.ID["Paste your key to start the adventure."] = "Tempelkan kunci untuk memulai"
+Lang.Translations.ID["Paste key here"] = "Tempelkan kunci di sini"
+Lang.Translations.ID["Get key"] = "Dapatkan kunci"
+Lang.Translations.ID["Check key"] = "Periksa kunci"
+Lang.Translations.ID["Key link copied"] = "Tautan kunci disalin"
+Lang.Translations.ID["Checking..."] = "Memeriksa..."
+Lang.Translations.ID["Invalid key"] = "Kunci tidak valid"
+Lang.Translations.ID["Key accepted"] = "Kunci diterima"
+Lang.Translations.ID["Ready. Press %s to toggle the menu."] = "Siap. Tekan %s untuk membuka atau menutup menu."
+Lang.Translations.ID["Ready. Tap the ? block to toggle the menu."] = "Siap. Ketuk tombol melayang untuk membuka atau menutup menu."
+Lang.Translations.ID["Menu hidden. Press %s to open."] = "Menu disembunyikan. Tekan %s untuk membuka."
+Lang.Translations.ID["TIME"] = "WAKTU"
+Lang.Translations.ID["Nothing here yet"] = "Belum ada isi"
+Lang.Translations.ID["Ambient particles"] = "Partikel dekorasi"
+Lang.Translations.ID["Floating sparkles behind the menu"] = "Pixel melayang di belakang menu"
+Lang.Translations.ID["Device: %s"] = "Perangkat: %s"
+Lang.Translations.ID["Animation intensity"] = "Intensitas animasi"
+Lang.Translations.ID["Reduce motion"] = "Kurangi gerakan"
+Lang.Translations.ID["Instant transitions and no decorative motion"] = "Transisi langsung tanpa gerakan dekoratif"
+Lang.Translations.ID["Owner"] = "Pemilik"
+Lang.Translations.ID["Website"] = "Situs web"
+Lang.Translations.ID["Copy website"] = "Salin situs web"
+Lang.Translations.ID["Website link copied"] = "Tautan situs web disalin"
+Lang.Translations.ID["Running"] = "Berjalan"
+Lang.Translations.ID["Waiting"] = "Menunggu"
+Lang.Translations.ID["Off"] = "Mati"
+Lang.Translations.ID["Success"] = "Berhasil"
+Lang.Translations.ID["Error"] = "Gagal"
+Lang.Translations.ID["Current"] = "Saat ini"
+Lang.Translations.ID["Collected"] = "Terkumpul"
+Lang.Translations.ID["Current task"] = "Aktivitas saat ini"
+Lang.Translations.ID["Equipped gear"] = "Perlengkapan terpasang"
+Lang.Translations.ID["Tower loot"] = "Loot menara"
+Lang.Translations.ID["Level"] = "Level"
+Lang.Translations.ID["Coins"] = "Koin"
+Lang.Translations.ID["Rebirth"] = "Rebirth"
+Lang.Translations.ID["Idle"] = "Siaga"
+Lang.Translations.ID["Stopped"] = "Dihentikan"
+Lang.Translations.ID["Profile unavailable"] = "Profil tidak tersedia"
+Lang.Translations.ID["Waiting for profile"] = "Menunggu profil"
+Lang.Translations.ID["No active features"] = "Tidak ada fitur aktif"
+Lang.Translations.ID["Active features"] = "Fitur aktif"
+Lang.Translations.ID["ALL OFF"] = "MATIKAN SEMUA"
+Lang.Translations.ID["%s active"] = "%s aktif"
+Lang.Translations.ID["%s enabled"] = "%s diaktifkan"
+Lang.Translations.ID["Low"] = "Ringan"
+Lang.Translations.ID["Normal"] = "Normal"
+Lang.Translations.ID["Lively"] = "Dinamis"
+Lang.Translations.ID["Busy"] = "Sibuk"
+Lang.Translations.ID["Loaded"] = "Dimuat"
+Lang.Translations.ID["Action failed; check the console"] = "Tindakan gagal; periksa konsol"
+Lang.Translations.ID["No confirmed result yet"] = "Belum ada hasil terkonfirmasi"
+Lang.Translations.ID["No tower ticket"] = "Tidak ada tiket menara"
+Lang.Translations.ID["Sold"] = "Terjual"
+Lang.Translations.ID["Forge completed"] = "Tempa selesai"
+Lang.Translations.ID["Config saved"] = "Konfigurasi disimpan"
+Lang.Translations.ID["Box"] = "Kotak"
+Lang.Translations.ID["Box fill"] = "Isi kotak"
+Lang.Translations.ID["Box style"] = "Gaya kotak"
+Lang.Translations.ID["Chams"] = "Sorotan karakter"
+Lang.Translations.ID["Colors"] = "Warna"
+Lang.Translations.ID["Distance"] = "Jarak"
+Lang.Translations.ID["ESP"] = "ESP"
+Lang.Translations.ID["Elements"] = "Elemen"
+Lang.Translations.ID["Enable ESP"] = "Aktifkan ESP"
+Lang.Translations.ID["Enemy"] = "Lawan"
+Lang.Translations.ID["Friendly"] = "Kawan"
+Lang.Translations.ID["Head dot"] = "Titik kepala"
+Lang.Translations.ID["Health bar"] = "Bar kesehatan"
+Lang.Translations.ID["Health number"] = "Angka kesehatan"
+Lang.Translations.ID["Max distance"] = "Jarak maksimum"
+Lang.Translations.ID["Minimap of nearby players, drag to move"] = "Peta mini pemain sekitar, seret untuk memindahkan"
+Lang.Translations.ID["Name"] = "Nama"
+Lang.Translations.ID["Off-screen arrows"] = "Panah di luar layar"
+Lang.Translations.ID["Player ESP"] = "ESP pemain"
+Lang.Translations.ID["Radar"] = "Radar"
+Lang.Translations.ID["Radar range"] = "Jangkauan radar"
+Lang.Translations.ID["Radar size"] = "Ukuran radar"
+Lang.Translations.ID["Team check"] = "Periksa tim"
+Lang.Translations.ID["Text size"] = "Ukuran teks"
+Lang.Translations.ID["Tracer from"] = "Awal garis penunjuk"
+Lang.Translations.ID["Tracers"] = "Garis penunjuk"
+Lang.Translations.ID["Visuals"] = "Visual"
+Lang.Translations.ID["ESP Preview"] = "Pratinjau ESP"
+Lang.Translations.ID["Copy Website Link"] = "Salin tautan situs web"
+Lang.Translations.ID["arming"] = "menyiapkan"
+Lang.Translations.ID["farming enhance stones"] = "farm batu peningkatan"
+Lang.Translations.ID["farming rare enhance stones"] = "farm batu peningkatan langka"
+Lang.Translations.ID["farming coins"] = "farm koin"
+Lang.Translations.ID["enhancing"] = "meningkatkan"
+Lang.Translations.ID["need a tower ticket"] = "perlu tiket menara"
+Lang.Translations.ID["all at target"] = "semua mencapai target"
+Lang.Translations.ID["starting"] = "memulai"
+Lang.Translations.ID["warming up"] = "menyiapkan"
+Lang.Translations.ID["Index"] = "Indeks"
+Lang.Translations.ID["Max Gear"] = "Perlengkapan maksimum"
+Lang.Translations.ID["Dashboard"] = "Dashboard"
+Lang.Translations.ID["Controls"] = "Kontrol"
+Lang.Translations.ID["Icons"] = "Ikon"
+Lang.Translations.ID["Icon preview"] = "Pratinjau ikon"
+Lang.Translations.ID["Selected icon"] = "Ikon terpilih"
+Lang.Translations.ID["Themes"] = "Tema"
+Lang.Translations.ID["Session"] = "Sesi"
+Lang.Translations.ID["Preview forge feedback"] = "Pratinjau animasi tempa"
+Lang.Translations.ID["Power up"] = "Aktifkan"
+Lang.Translations.ID["Demo enabled"] = "Demo aktif"
+Lang.Translations.ID["Demo"] = "Demo"
+Lang.Translations.ID["Speed"] = "Kecepatan"
+Lang.Translations.ID["Could not download the menu. Check your connection and run it again."] = "Menu tidak dapat diunduh. Periksa koneksi dan jalankan ulang."
+Lang.Translations.ID["Failed"] = "Gagal"
+Lang.Translations.ID["Saved"] = "Disimpan"
+Lang.Translations.ID["Autoloaded"] = "Dimuat otomatis"
+Lang.Translations.ID["Autoload failed"] = "Muat otomatis gagal"
+
 Lang.Strings = {
-    Search = { EN = "Search...", TH = "ค้นหา..." },
-    Confirm = { EN = "Click again to confirm", TH = "กดอีกครั้งเพื่อยืนยัน" },
-    None = { EN = "None", TH = "ไม่มี" },
-    NoResults = { EN = "No matches", TH = "ไม่พบรายการ" },
-    Settings = { EN = "Settings", TH = "ตั้งค่า" },
-    SettingsDesc = { EN = "Interface, language and configs", TH = "หน้าตา ภาษา และคอนฟิก" },
-    Interface = { EN = "Interface", TH = "หน้าตา" },
-    Language = { EN = "Language", TH = "ภาษา" },
-    ThemeName = { EN = "Theme", TH = "ธีม" },
-    Scale = { EN = "UI scale", TH = "ขนาด UI" },
-    MenuKey = { EN = "Menu key", TH = "ปุ่มเปิดเมนู" },
-    Watermark = { EN = "Watermark", TH = "วอเตอร์มาร์ก" },
-    WatermarkDesc = { EN = "Hub name, FPS, ping and play time", TH = "ชื่อฮับ FPS ปิง และเวลาที่เล่น" },
-    FloatButton = { EN = "Mobile button", TH = "ปุ่มลอยมือถือ" },
-    FloatDesc = { EN = "Floating block that opens the menu", TH = "กล่อง ? ลอยสำหรับเปิดปิดเมนู" },
-    Configs = { EN = "Configs", TH = "คอนฟิก" },
-    ConfigName = { EN = "Config name", TH = "ชื่อคอนฟิก" },
-    SavedConfigs = { EN = "Saved configs", TH = "คอนฟิกที่บันทึกไว้" },
-    Save = { EN = "Save", TH = "บันทึก" },
-    Load = { EN = "Load", TH = "โหลด" },
-    Delete = { EN = "Delete", TH = "ลบ" },
-    Refresh = { EN = "Refresh", TH = "รีเฟรช" },
-    SetAutoload = { EN = "Load on start", TH = "โหลดอัตโนมัติ" },
-    Autoload = { EN = "Autoload: %s", TH = "โหลดอัตโนมัติ: %s" },
-    PickConfig = { EN = "Type or select a config name first", TH = "พิมพ์หรือเลือกชื่อคอนฟิกก่อน" },
-    NoFileApi = { EN = "This executor cannot save files", TH = "executor นี้บันทึกไฟล์ไม่ได้" },
-    ConfigMissing = { EN = "Config not found", TH = "ไม่พบคอนฟิก" },
-    ConfigBroken = { EN = "Config file is damaged", TH = "ไฟล์คอนฟิกเสีย" },
-    About = { EN = "About", TH = "เกี่ยวกับ" },
-    Unload = { EN = "Unload hub", TH = "ปิดสคริปต์" },
-    Rejoin = { EN = "Rejoin", TH = "เข้าเซิร์ฟใหม่" },
-    KeyTitle = { EN = "ENTER KEY", TH = "ใส่คีย์" },
-    KeyNote = { EN = "Paste your key to start the adventure.", TH = "วางคีย์เพื่อเริ่มผจญภัย" },
-    KeyPlaceholder = { EN = "Paste key here", TH = "วางคีย์ที่นี่" },
-    GetKey = { EN = "Get key", TH = "รับคีย์" },
-    CheckKey = { EN = "Check key", TH = "ตรวจคีย์" },
-    KeyCopied = { EN = "Key link copied", TH = "คัดลอกลิงก์รับคีย์แล้ว" },
-    KeyChecking = { EN = "Checking...", TH = "กำลังตรวจ..." },
-    KeyInvalid = { EN = "Invalid key", TH = "คีย์ไม่ถูกต้อง" },
-    KeyValid = { EN = "Key accepted", TH = "คีย์ถูกต้อง" },
+    Search = { EN = "Search...", ID = "Cari...", TH = "ค้นหา..." },
+    Confirm = { EN = "Click again to confirm", ID = "Klik lagi untuk konfirmasi", TH = "กดอีกครั้งเพื่อยืนยัน" },
+    None = { EN = "None", ID = "Tidak ada", TH = "ไม่มี" },
+    NoResults = { EN = "No matches", ID = "Tidak ada hasil", TH = "ไม่พบรายการ" },
+    Settings = { EN = "Settings", ID = "Pengaturan", TH = "ตั้งค่า" },
+    SettingsDesc = { EN = "Interface, language and configs", ID = "Tampilan, bahasa, dan konfigurasi", TH = "หน้าตา ภาษา และคอนฟิก" },
+    Interface = { EN = "Interface", ID = "Tampilan", TH = "หน้าตา" },
+    Language = { EN = "Language", ID = "Bahasa", TH = "ภาษา" },
+    ThemeName = { EN = "Theme", ID = "Tema", TH = "ธีม" },
+    Scale = { EN = "UI scale", ID = "Skala UI", TH = "ขนาด UI" },
+    MenuKey = { EN = "Menu key", ID = "Tombol menu", TH = "ปุ่มเปิดเมนู" },
+    Watermark = { EN = "Watermark", ID = "Label sesi", TH = "วอเตอร์มาร์ก" },
+    WatermarkDesc = { EN = "Hub name, FPS, ping and play time", ID = "Nama UI, FPS, ping, dan waktu bermain", TH = "ชื่อฮับ FPS ปิง และเวลาที่เล่น" },
+    FloatButton = { EN = "Mobile button", ID = "Tombol HP", TH = "ปุ่มลอยมือถือ" },
+    FloatDesc = { EN = "Floating block that opens the menu", ID = "Tombol melayang untuk membuka menu", TH = "กล่อง ? ลอยสำหรับเปิดปิดเมนู" },
+    Configs = { EN = "Configs", ID = "Konfigurasi", TH = "คอนฟิก" },
+    ConfigName = { EN = "Config name", ID = "Nama konfigurasi", TH = "ชื่อคอนฟิก" },
+    SavedConfigs = { EN = "Saved configs", ID = "Konfigurasi tersimpan", TH = "คอนฟิกที่บันทึกไว้" },
+    Save = { EN = "Save", ID = "Simpan", TH = "บันทึก" },
+    Load = { EN = "Load", ID = "Muat", TH = "โหลด" },
+    Delete = { EN = "Delete", ID = "Hapus", TH = "ลบ" },
+    Refresh = { EN = "Refresh", ID = "Muat ulang", TH = "รีเฟรช" },
+    SetAutoload = { EN = "Load on start", ID = "Muat saat mulai", TH = "โหลดอัตโนมัติ" },
+    Autoload = { EN = "Autoload: %s", ID = "Muat otomatis: %s", TH = "โหลดอัตโนมัติ: %s" },
+    PickConfig = { EN = "Type or select a config name first", ID = "Ketik atau pilih nama konfigurasi terlebih dahulu", TH = "พิมพ์หรือเลือกชื่อคอนฟิกก่อน" },
+    NoFileApi = { EN = "This executor cannot save files", ID = "Executor ini tidak dapat menyimpan file", TH = "executor นี้บันทึกไฟล์ไม่ได้" },
+    ConfigMissing = { EN = "Config not found", ID = "Konfigurasi tidak ditemukan", TH = "ไม่พบคอนฟิก" },
+    ConfigBroken = { EN = "Config file is damaged", ID = "File konfigurasi rusak", TH = "ไฟล์คอนฟิกเสีย" },
+    About = { EN = "About", ID = "Tentang", TH = "เกี่ยวกับ" },
+    Unload = { EN = "Unload hub", ID = "Tutup UI", TH = "ปิดสคริปต์" },
+    Rejoin = { EN = "Rejoin", ID = "Masuk ulang", TH = "เข้าเซิร์ฟใหม่" },
+    KeyTitle = { EN = "ENTER KEY", ID = "MASUKKAN KUNCI", TH = "ใส่คีย์" },
+    KeyNote = { EN = "Paste your key to start the adventure.", ID = "Tempelkan kunci untuk memulai", TH = "วางคีย์เพื่อเริ่มผจญภัย" },
+    KeyPlaceholder = { EN = "Paste key here", ID = "Tempelkan kunci di sini", TH = "วางคีย์ที่นี่" },
+    GetKey = { EN = "Get key", ID = "Dapatkan kunci", TH = "รับคีย์" },
+    CheckKey = { EN = "Check key", ID = "Periksa kunci", TH = "ตรวจคีย์" },
+    KeyCopied = { EN = "Key link copied", ID = "Tautan kunci disalin", TH = "คัดลอกลิงก์รับคีย์แล้ว" },
+    KeyChecking = { EN = "Checking...", ID = "Memeriksa...", TH = "กำลังตรวจ..." },
+    KeyInvalid = { EN = "Invalid key", ID = "Kunci tidak valid", TH = "คีย์ไม่ถูกต้อง" },
+    KeyValid = { EN = "Key accepted", ID = "Kunci diterima", TH = "คีย์ถูกต้อง" },
     IntroSteps = {
-        EN = { "Warming up the warp pipe...", "Collecting coins...", "Building the castle...", "Let's-a go!" },
-        TH = { "กำลังอุ่นท่อวาร์ป...", "กำลังเก็บเหรียญ...", "กำลังสร้างปราสาท...", "ลุยกันเลย!" },
+        EN = { "Preparing interface...", "Loading icons...", "Building controls...", "Ready to play!" },
+        ID = { "Menyiapkan tampilan...", "Memuat ikon...", "Menyusun kontrol...", "Siap bermain!" },
+        TH = { "กำลังเตรียมหน้าตา...", "กำลังโหลดไอคอน...", "กำลังสร้างเมนู...", "พร้อมเล่น!" },
     },
-    Ready = { EN = "Ready. Press %s to toggle the menu.", TH = "พร้อมแล้ว กด %s เพื่อเปิดปิดเมนู" },
-    ReadyTouch = { EN = "Ready. Tap the ? block to toggle the menu.", TH = "พร้อมแล้ว แตะกล่อง ? เพื่อเปิดปิดเมนู" },
-    Hidden = { EN = "Menu hidden. Press %s to open.", TH = "ซ่อนเมนูแล้ว กด %s เพื่อเปิด" },
-    Session = { EN = "TIME", TH = "เวลา" },
-    Empty = { EN = "Nothing here yet", TH = "ยังไม่มีรายการ" },
-    Particles = { EN = "Ambient particles", TH = "ละอองตกแต่ง" },
-    ParticlesDesc = { EN = "Floating sparkles behind the menu", TH = "ประกายลอยด้านหลังเมนู" },
-    Device = { EN = "Device: %s", TH = "อุปกรณ์: %s" },
+    Ready = { EN = "Ready. Press %s to toggle the menu.", ID = "Siap. Tekan %s untuk membuka atau menutup menu.", TH = "พร้อมแล้ว กด %s เพื่อเปิดปิดเมนู" },
+    ReadyTouch = { EN = "Ready. Tap the ? block to toggle the menu.", ID = "Siap. Ketuk tombol melayang untuk membuka atau menutup menu.", TH = "พร้อมแล้ว แตะกล่อง ? เพื่อเปิดปิดเมนู" },
+    Hidden = { EN = "Menu hidden. Press %s to open.", ID = "Menu disembunyikan. Tekan %s untuk membuka.", TH = "ซ่อนเมนูแล้ว กด %s เพื่อเปิด" },
+    Session = { EN = "TIME", ID = "WAKTU", TH = "เวลา" },
+    Empty = { EN = "Nothing here yet", ID = "Belum ada isi", TH = "ยังไม่มีรายการ" },
+    Particles = { EN = "Ambient particles", ID = "Partikel dekorasi", TH = "ละอองตกแต่ง" },
+    ParticlesDesc = { EN = "Floating sparkles behind the menu", ID = "Pixel melayang di belakang menu", TH = "ประกายลอยด้านหลังเมนู" },
+    Device = { EN = "Device: %s", ID = "Perangkat: %s", TH = "อุปกรณ์: %s" },
 }
+
+
+Lang.Strings.ActiveFeatures = { EN = "%s active", ID = "%s aktif", TH = "%s ทำงาน" }
+Lang.Strings.EnabledFeatures = { EN = "%s enabled", ID = "%s diaktifkan", TH = "เปิด %s" }
+Lang.Strings.CopyWebsite = { EN = "Copy website", ID = "Salin situs web", TH = "คัดลอกเว็บไซต์" }
+Lang.Strings.WebsiteCopied = { EN = "Website link copied", ID = "Tautan situs web disalin", TH = "คัดลอกลิงก์เว็บไซต์แล้ว" }
+Lang.Strings.Owner = { EN = "Owner: %s", ID = "Pemilik: %s", TH = "เจ้าของ: %s" }
+Lang.Translations.TH["Running"] = "กำลังทำงาน"
+Lang.Translations.TH["Waiting"] = "รอ"
+Lang.Translations.TH["Off"] = "ปิด"
+Lang.Translations.TH["Success"] = "สำเร็จ"
+Lang.Translations.TH["Error"] = "ผิดพลาด"
+Lang.Translations.TH["Current"] = "ปัจจุบัน"
+Lang.Translations.TH["Collected"] = "เก็บแล้ว"
+Lang.Translations.TH["Stopped"] = "หยุดแล้ว"
+Lang.Translations.TH["Idle"] = "ว่าง"
+Lang.Translations.TH["ALL OFF"] = "ปิดทั้งหมด"
+Lang.Translations.TH["Low"] = "น้อย"
+Lang.Translations.TH["Normal"] = "ปกติ"
+Lang.Translations.TH["Lively"] = "มีชีวิตชีวา"
 
 function Lang.HasThai(text)
     return text:find("\224[\184\185]") ~= nil
@@ -821,15 +994,21 @@ end
 --@return string ตามภาษาปัจจุบัน รับ {EN,TH} หรือ "English · ไทย" หรือ string ธรรมดา
 function Lang.Resolve(spec)
     if type(spec) == "table" then
-        return spec[State.Language] or spec.EN or spec.TH or ""
+        local exact = spec[State.Language]
+        if exact ~= nil then return exact end
+        local english = spec.EN or spec.ID or spec.TH or ""
+        return (Lang.Translations[State.Language] or {})[english] or english
     end
-    if type(spec) ~= "string" then
-        return spec == nil and "" or tostring(spec)
-    end
+    if type(spec) ~= "string" then return spec == nil and "" or tostring(spec) end
     local english, thai = spec:match("^(.-)%s+·%s+(.+)$")
     if english and Lang.HasThai(thai) then
-        return State.Language == "TH" and thai or english
+        if State.Language == "TH" then return thai end
+        spec = english
     end
+    local dictionary = Lang.Translations[State.Language] or {}
+    if dictionary[spec] then return dictionary[spec] end
+    local prefix, tail = spec:match("^(.-): (.+)$")
+    if prefix and dictionary[prefix] then return dictionary[prefix] .. ": " .. tail end
     return spec
 end
 
@@ -843,7 +1022,7 @@ end
 
 function Lang.SearchText(spec)
     if type(spec) == "table" then
-        return ((spec.EN or "") .. " " .. (spec.TH or "")):lower()
+        return ((spec.EN or "") .. " " .. (spec.ID or Lang.Translations.ID[spec.EN] or "") .. " " .. (spec.TH or "")):lower()
     end
     return tostring(spec or ""):lower()
 end
@@ -866,7 +1045,7 @@ function Lang.OnChange(owner, callback)
 end
 
 function Lang.Set(code)
-    if code ~= "EN" and code ~= "TH" then
+    if code ~= "EN" and code ~= "ID" and code ~= "TH" then
         return
     end
     State.Language = code
@@ -959,7 +1138,7 @@ end
 function Fonts.Disable(reason)
     Fonts.Broken = true
     SafeFile(writefile, Config.FontDir .. "/disabled", tostring(reason))
-    warn("[Pixel Hub] Thai font off: " .. tostring(reason))
+    warn("[PixeL UI] Thai font off: " .. tostring(reason))
 end
 
 function Fonts.LoadThai()
@@ -1094,6 +1273,8 @@ function Draw.Text(props, font, size, token, spec)
     Theme.Bind(label, { TextColor3 = token or "Text" })
     if spec ~= nil then
         Lang.Bind(label, spec)
+    elseif className ~= "TextBox" and props.Text ~= "" then
+        Lang.Bind(label, props.Text)
     end
     return label
 end
@@ -1276,7 +1457,7 @@ Sprite.Alias = {
 Sprite.Swaps = {}
 
 
--- Tara UI: independently authored semantic 16x16 icon pack.
+-- PixeL UI: independently authored semantic 16x16 icon pack.
 Sprite.Art["anvil"] = { "................", "................", "................", "................", "................", "..wwwwwwwwwwwww.", "..bwwwwwwwwwwww.", "...bbbbbbbbbb...", "....bbbbbbbbb...", "....bbbbbbbbb...", ".......bbb......", ".......bbb......", ".......bbb......", "....bbbbbbbbb...", "....bbbbbbbbb...", "................" }
 Sprite.Art["hammer"] = { "................", "................", "........wwwww...", "........bbbbb...", "........bbbbb...", "........bbbbb...", "........bbbbb...", "..........yy....", ".........yy.....", "........yy......", ".......yy.......", "......yy........", ".....yy.........", "....yy..........", "................", "................" }
 Sprite.Art["ore"] = { "................", "................", ".........bb.....", ".......bb..b....", ".....bbww..b....", "....bww.....b...", "....bbbbbbbb.b..", "....bbbbbbbb.b..", "...b.bbbbbbb..b.", "..b..bbbbbbb.b..", "..b..bbbbbbb.b..", ".....bbbbbbbb...", "............b...", "...bbbbbbbbb....", "................", "................" }
@@ -2296,7 +2477,9 @@ end
 
 function Dropdown:Render()
     local active = self:GetActiveValues()
-    local text = #active > 0 and table.concat(active, ", ") or Lang.Resolve(self.Placeholder or Lang.Strings.None)
+    local labels = {}
+    for _, value in ipairs(active) do table.insert(labels, Lang.Resolve(value)) end
+    local text = #active > 0 and table.concat(labels, ", ") or Lang.Resolve(self.Placeholder or Lang.Strings.None)
     self.Display.Text = text
     Theme.Bind(self.Display, { TextColor3 = #active > 0 and "Text" or "Muted" })
 end
@@ -2556,13 +2739,14 @@ function Container:AddStatCard(info)
     selfCard.Value = Draw.Text({ Position = UDim2.fromOffset(56, 30), Size = UDim2.new(1, -68, 0, 24),
         TextTruncate = info.Multiline and Enum.TextTruncate.None or Enum.TextTruncate.AtEnd,
         TextWrapped = info.Multiline == true, TextYAlignment = Enum.TextYAlignment.Top,
-        Parent = frame }, "Strong", info.Multiline and 14 or 20, "Text", tostring(info.Value or "—"))
+        Parent = frame }, "Strong", info.Multiline and 14 or 20, "Text", info.Value ~= nil and info.Value or "—")
     if info.Multiline then selfCard.Value.Size = UDim2.new(1, -68, 0, 62) end
     selfCard.Status = Draw.Text({ Position = UDim2.fromOffset(12, 60), Size = UDim2.new(1, -24, 0, 20),
         TextTruncate = Enum.TextTruncate.AtEnd, Parent = frame }, "Desc", 13, "Muted", "")
     if info.Multiline then selfCard.Status.Position = UDim2.fromOffset(12, 100) end
     selfCard.Item = self:Add(frame, { Height = info.Multiline and 130 or 90, Search = Lang.SearchText(info.Title) })
     selfCard:SetStatus(info.Status or "Off", info.Note)
+    Lang.OnChange(frame, function() selfCard:SetStatus(selfCard.StatusCode, selfCard.Note) end)
     return selfCard
 end
 
@@ -2573,14 +2757,15 @@ function StatusCard:SetIcon(name)
 end
 
 function StatusCard:SetValue(value)
-    self.Value.Text = tostring(value)
+    Lang.Bind(self.Value, value)
 end
 
 function StatusCard:SetStatus(status, note)
     local token = Config.StatusTokens[status] or "Muted"
     Theme.Bind(self.Status, { TextColor3 = token })
+    self.StatusCode, self.Note = status, note
     self.Status.Text = (status == "Running" and "> " or status == "Error" and "! " or "• ")
-        .. status .. (note and (" / " .. tostring(note)) or "")
+        .. Lang.Resolve(status) .. (note and (" / " .. Lang.Resolve(note)) or "")
 end
 
 function Mascot.Build(parent)
@@ -3392,7 +3577,7 @@ function Gui.Setup()
     local parent = Util.GuiParent()
     Gui.ClearPrevious(parent)
     State.Gui = Draw.New("ScreenGui", {
-        Name = "PixelHub",
+        Name = "PixeLUI",
         ResetOnSpawn = false,
         IgnoreGuiInset = true,
         ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
@@ -3507,8 +3692,10 @@ function Window.New(options)
         size = Vector2.new(size.X.Offset, size.Y.Offset)
     end
     local self = setmetatable({
-        Title = options.Title or "Tara UI",
-        SubTitle = options.SubTitle or "",
+        Title = options.Title or "PixeL UI",
+        SubTitle = options.SubTitle or "Jeaneism · 0x4.me",
+        Owner = options.Owner or Library.Owner,
+        Website = options.Website or Library.Website,
         Desired = size,
         Size = size,
         Tabs = {},
@@ -3559,7 +3746,7 @@ function Window:BuildTopbar()
     self.TopbarLine = Draw.Box("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, 3), ZIndex = 3, Parent = topbar }, "Outline")
     self.Topbar = topbar
     self:BuildDecor(topbar)
-    local left = Draw.New("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -200, 1, -3), ZIndex = 4, Parent = topbar })
+    local left = Draw.New("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -(State.Touch and 242 or 218), 1, -3), ZIndex = 4, Parent = topbar })
     Draw.List(left, 10, true, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
     self.Emblem = Draw.New("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(32, 32), Parent = left })
     Mascot.Build(self.Emblem)
@@ -3570,7 +3757,7 @@ function Window:BuildTopbar()
     end)
     self:BuildTitle(left)
     self.SubtitlePill = self:BuildPill(left, self.SubTitle)
-    local right = Draw.New("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 0), Size = UDim2.new(0, 180, 1, -3), ZIndex = 4, Parent = topbar })
+    local right = Draw.New("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 0), Size = UDim2.new(0, State.Touch and 220 or 196, 1, -3), ZIndex = 4, Parent = topbar })
     Draw.List(right, 8, true, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Center)
     self:BuildLanguagePill(right)
     local _, minimizeFace = self:BuildTopButton(right, "Minimize", "Coin", "CoinDark", "Ink", function()
@@ -3648,11 +3835,11 @@ function Window:BuildPill(parent, text)
 end
 
 function Window:BuildLanguagePill(parent)
-    local pill = Draw.Box("Frame", { Size = UDim2.fromOffset(74, 28), LayoutOrder = 1, Parent = parent }, "Shadow", "Outline", UDim.new(1, 0), 2)
+    local pill = Draw.Box("Frame", { Size = UDim2.fromOffset(State.Touch and 120 or 104, State.Touch and 40 or 32), LayoutOrder = 1, Parent = parent }, "Shadow", "Outline", UDim.new(1, 0), 2)
     pill.BackgroundTransparency = 0.35
     local segments = {}
-    for index, code in ipairs({ "EN", "TH" }) do
-        local segment = Draw.Box("TextButton", { Position = UDim2.new((index - 1) * 0.5, 2, 0, 2), Size = UDim2.new(0.5, -4, 1, -4), Parent = pill }, "Coin", nil, UDim.new(1, 0))
+    for index, code in ipairs(Lang.Codes) do
+        local segment = Draw.Box("TextButton", { Position = UDim2.new((index - 1) / 3, 2, 0, 2), Size = UDim2.new(1 / 3, -4, 1, -4), Parent = pill }, "Coin", nil, UDim.new(1, 0))
         local label = Draw.Text({ Text = code, Size = UDim2.fromScale(1, 1), TextXAlignment = Enum.TextXAlignment.Center, Parent = segment }, "Body", 13, "White")
         segment.Activated:Connect(function()
             Library:SetLanguage(code)
@@ -3760,6 +3947,8 @@ function Window:BuildMiniBar()
     end)
     self.MiniOff = off
     off.Visible = false
+    Lang.OnChange(bar, function() self:SetSessionStatus(self.SessionText, self.SessionCount, self.SessionState) end)
+    self:SetSessionStatus("Idle", 0, "Off")
 end
 
 function Window:SetAllOff(callback)
@@ -3769,8 +3958,9 @@ end
 
 function Window:SetSessionStatus(text, count, status)
     status = status or "Off"
+    self.SessionText, self.SessionCount, self.SessionState = text or "Idle", count or 0, status
     self.MiniStatus.Text = (status == "Running" and "> " or status == "Error" and "! " or "• ")
-        .. tostring(text or "Idle") .. " / " .. tostring(count or 0) .. " active"
+        .. Lang.Resolve(self.SessionText) .. " / " .. Lang.Resolve(Lang.Format("ActiveFeatures", self.SessionCount))
     Theme.Bind(self.MiniStatus, { TextColor3 = Config.StatusTokens[status] or "Muted" })
 end
 
@@ -3820,7 +4010,7 @@ function Window:BuildGround()
         Draw.Box("Frame", { Position = UDim2.fromOffset(12 + (index - 1) * 10, 10),
             Size = UDim2.fromOffset(6, 6), Parent = ground }, Config.TitleColors[index])
     end
-    Draw.Text({ Text = "TARA ARCADE  /  v" .. Library.Version, Position = UDim2.fromOffset(60, 4),
+    Draw.Text({ Text = "PixeL UI " .. Library.Version .. " / Jeaneism / 0x4.me", Position = UDim2.fromOffset(60, 4),
         Size = UDim2.new(1, -100, 1, -6), TextTruncate = Enum.TextTruncate.AtEnd, Parent = ground },
         "Desc", 11, "SubText")
     self.Ground = ground
@@ -4430,7 +4620,7 @@ end
 
 function Particles.Resume()
     if Particles.Layer then Particles.Layer.Visible = Particles.Active() end
-    local limit = State.AnimationIntensity == "Extra" and #Particles.Pool or math.min(8, #Particles.Pool)
+    local limit = State.AnimationIntensity == "Lively" and #Particles.Pool or math.min(8, #Particles.Pool)
     for index, entry in ipairs(Particles.Pool) do
         if Particles.Active() and index <= limit then
             if entry.Tween and entry.Tween.PlaybackState == Enum.PlaybackState.Paused then
@@ -4468,7 +4658,7 @@ function Notify.Push(title, content, duration, kind)
     local face = Draw.Box("Frame", { Size = UDim2.fromScale(1, 1), ClipsDescendants = true, Parent = card }, "Panel", "Outline", 12, 2)
     local icon = Sprite.New(face, Notify.Icons[kind or "Coin"] or "crystal", 32)
     icon.Position = UDim2.fromOffset(12, 11)
-    Draw.Text({ Position = UDim2.fromOffset(58, 9), Size = UDim2.new(1, -68, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd, Parent = face }, "Body", Util.TextSize("Group"), "Text", title or "Pixel Hub")
+    Draw.Text({ Position = UDim2.fromOffset(58, 9), Size = UDim2.new(1, -68, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd, Parent = face }, "Body", Util.TextSize("Group"), "Text", title or "PixeL UI")
     Draw.Text({ Text = text, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, Position = UDim2.fromOffset(58, 29), Size = UDim2.new(1, -68, 0, textHeight), Parent = face }, "Desc", Util.TextSize("Desc") + 1, "SubText")
     local timer = Draw.Box("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0), Size = UDim2.new(1, 0, 0, 4), Parent = face }, "Accent")
     duration = duration or Config.Notify.Duration
@@ -5339,7 +5529,7 @@ function Window:AddVisualsTab(options)
     if options.Provider then
         Visuals:SetProvider(options.Provider)
     end
-    local T = function(en, th) return { EN = en, TH = th } end
+    local T = function(en, th) return Library:T(en, th) end
     local function Bind(key)
         return function(value)
             Visuals:Set(key, value)
@@ -5629,7 +5819,7 @@ function Compat.NeedCap(option, caps)
             return true
         end
         local feature = option.Info and option.Info.Text and Lang.Resolve(option.Info.Text) or option.Idx
-        Library:Notify("Pixel Hub", Library:T(tostring(feature) .. " is not supported on this executor", tostring(feature) .. " ใช้กับ executor นี้ไม่ได้"), 4, "Warn")
+        Library:Notify("PixeL UI", Library:T(tostring(feature) .. " is not supported on this executor", tostring(feature) .. " ใช้กับ executor นี้ไม่ได้"), 4, "Warn")
         task.defer(option.SetValue, option, false)
         return false
     end)
@@ -5648,7 +5838,7 @@ function Compat.Block(option, reason)
             return true
         end
         local feature = option.Info and option.Info.Text and Lang.Resolve(option.Info.Text) or option.Idx
-        Library:Notify("Pixel Hub", tostring(feature) .. ": " .. tostring(Lang.Resolve(reason) or reason), 4, "Warn")
+        Library:Notify("PixeL UI", tostring(feature) .. ": " .. tostring(Lang.Resolve(reason) or reason), 4, "Warn")
         task.defer(option.SetValue, option, false)
         return false
     end)
@@ -5815,6 +6005,7 @@ function Lang.Format(key, ...)
     return {
         EN = string.format(spec.EN, table.unpack(args, 1, args.n)),
         TH = string.format(spec.TH or spec.EN, table.unpack(args, 1, args.n)),
+        ID = string.format(spec.ID or Lang.Translations.ID[spec.EN] or spec.EN, table.unpack(args, 1, args.n)),
     }
 end
 
@@ -5917,8 +6108,8 @@ function Configs.BuildSection(group)
         end
         local ok, reason = handler(name)
         local action = Lang.Strings[actionKey]
-        local message = ok and { EN = action.EN .. ": " .. name, TH = action.TH .. ": " .. name }
-            or { EN = action.EN .. " failed: " .. tostring(reason), TH = action.TH .. " ไม่สำเร็จ: " .. tostring(reason) }
+        local message = ok and { EN = action.EN .. ": " .. name, ID = action.ID .. ": " .. name, TH = action.TH .. ": " .. name }
+            or { EN = action.EN .. " failed: " .. tostring(reason), ID = action.ID .. " gagal: " .. tostring(reason), TH = action.TH .. " ไม่สำเร็จ: " .. tostring(reason) }
         Library:Notify(Lang.Strings.Configs, message, 3, ok and "Success" or "Error")
         list:SetValues(Configs.List())
         if ok then Library:Feedback(actionKey == "Save" and "Save" or "Success") else Library:Feedback("Error") end
@@ -5949,10 +6140,10 @@ function Window:AddSettingsTab()
     local interface = tab:AddLeftGroupbox(Lang.Strings.Interface, "settings-sliders")
     interface:AddDropdown("MarioLanguage", {
         Text = Lang.Strings.Language,
-        Values = { "English", "ไทย" },
-        Default = State.Language == "TH" and "ไทย" or "English",
+        Values = { "English", "Indonesia", "ไทย" },
+        Default = Lang.LanguageNames[State.Language],
         Callback = function(value)
-            Library:SetLanguage(value == "ไทย" and "TH" or "EN")
+            Library:SetLanguage(value == "ไทย" and "TH" or value == "Indonesia" and "ID" or "EN")
         end,
     })
     interface:AddDropdown("MarioTheme", { Text = Lang.Strings.ThemeName, Values = Themes.Order, Default = State.ThemeName, Callback = function(name)
@@ -5966,7 +6157,7 @@ function Window:AddSettingsTab()
     end })
     interface:AddToggle("MarioWatermark", { Text = Lang.Strings.Watermark, Description = Lang.Strings.WatermarkDesc, Default = Watermark.Frame ~= nil and Watermark.Frame.Visible, Callback = Watermark.SetVisible })
     interface:AddDropdown("PixelAnimationIntensity", {
-        Text = Library:T("Animation intensity", "ระดับแอนิเมชัน"), Values = { "Low", "Normal", "Extra" },
+        Text = Library:T("Animation intensity", "ระดับแอนิเมชัน"), Values = { "Low", "Normal", "Lively" },
         Default = State.AnimationIntensity, Callback = function(value) Library:SetAnimationIntensity(value) end,
     })
     interface:AddToggle("PixelReduceMotion", {
@@ -5978,6 +6169,12 @@ function Window:AddSettingsTab()
     interface:AddToggle("MarioFloat", { Text = Lang.Strings.FloatButton, Description = Lang.Strings.FloatDesc, Default = Float.Button ~= nil and Float.Button.Visible, Callback = Float.SetVisible })
     local about = tab:AddLeftGroupbox(Lang.Strings.About, "star")
     about:AddLabel(string.format("%s v%s - %s", self.Title, Library.Version, self.SubTitle ~= "" and self.SubTitle or tostring(game.PlaceId)))
+    about:AddLabel(Lang.Format("Owner", self.Owner or Library.Owner))
+    about:AddLabel(self.Website or Library.Website)
+    about:AddButton({ Text = Lang.Strings.CopyWebsite, Func = function()
+        local url = self.Website or Library.Website
+        if Util.Clipboard(url) then Library:Notify(self.Title, Lang.Strings.WebsiteCopied, 3, "Success") end
+    end })
     about:AddLabel(Lang.Format("Device", State.Touch and "Mobile" or "PC"))
     about:AddButton({ Text = Lang.Strings.Rejoin, Func = function()
         game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
@@ -6092,9 +6289,10 @@ function Library:CreateWindow(options)
     options = options or {}
     local language = options.Language
     if language == "Auto" then
-        language = tostring(LocalPlayer.LocaleId):sub(1, 2) == "th" and "TH" or "EN"
+        local locale = tostring(LocalPlayer.LocaleId):sub(1, 2):lower()
+        language = locale == "th" and "TH" or locale == "id" and "ID" or "EN"
     end
-    State.Language = language == "TH" and "TH" or "EN"
+    State.Language = Lang.LanguageNames[language] and language or "EN"
     State.UserScale = math.clamp(options.Scale or 1, Config.ScaleRange.Min, Config.ScaleRange.Max)
     Theme.Apply(options.Theme or "Arcade")
     Assets.Configure(Config.DefaultAssets)
@@ -6106,8 +6304,8 @@ function Library:CreateWindow(options)
     if State.Language == "TH" then
         Fonts.LoadThaiAsync()
     end
-    State.AnimationIntensity = ({ Low = true, Normal = true, Extra = true })[options.AnimationIntensity]
-        and options.AnimationIntensity or "Extra"
+    local intensity = options.AnimationIntensity == "Extra" and "Lively" or options.AnimationIntensity
+    State.AnimationIntensity = ({ Low = true, Normal = true, Lively = true })[intensity] and intensity or "Normal"
     local preference = false
     pcall(function() preference = game:GetService("GuiService").ReducedMotionEnabled end)
     State.ReduceMotion = options.ReduceMotion == true or (options.ReduceMotion == nil and preference == true)
@@ -6157,10 +6355,10 @@ function Library:CreateWindow(options)
             Title = window.Title,
             SubTitle = window.SubTitle,
             Steps = {
-                { Label = { EN = steps.EN[1], TH = steps.TH[1] } },
-                { Label = { EN = steps.EN[2], TH = steps.TH[2] } },
-                { Label = { EN = steps.EN[3], TH = steps.TH[3] }, Run = WaitBuilt },
-                { Label = { EN = steps.EN[4], TH = steps.TH[4] } },
+                { Label = { EN = steps.EN[1], ID = steps.ID[1], TH = steps.TH[1] } },
+                { Label = { EN = steps.EN[2], ID = steps.ID[2], TH = steps.TH[2] } },
+                { Label = { EN = steps.EN[3], ID = steps.ID[3], TH = steps.TH[3] }, Run = WaitBuilt },
+                { Label = { EN = steps.EN[4], ID = steps.ID[4], TH = steps.TH[4] } },
             },
             OnDone = Reveal,
         })
@@ -6175,19 +6373,20 @@ function Library:CreateWindow(options)
 end
 
 function Library:SetLanguage(code)
-    if code ~= "EN" and code ~= "TH" then
+    if code ~= "EN" and code ~= "ID" and code ~= "TH" then
         return
     end
     Lang.Set(code)
     local option = self.Options.MarioLanguage
     if option then
-        option.Value = code == "TH" and "ไทย" or "English"
+        option.Value = Lang.LanguageNames[code]
         option:Render()
     end
 end
 
 function Library:SetAnimationIntensity(value)
-    if value ~= "Low" and value ~= "Normal" and value ~= "Extra" then return end
+    if value == "Extra" then value = "Lively" end -- backward compatibility
+    if value ~= "Low" and value ~= "Normal" and value ~= "Lively" then return end
     State.AnimationIntensity = value
     Particles.Resume()
     if self.Window then self.Window:RenderDecor() end
@@ -6217,8 +6416,29 @@ function Library:GetLanguage()
     return State.Language
 end
 
-function Library:T(english, thai)
-    return { EN = english, TH = thai or english }
+function Library:RegisterTranslations(code, entries)
+    if not Lang.Translations[code] or type(entries) ~= "table" then return false end
+    for english, translated in pairs(entries) do
+        if type(english) == "string" and type(translated) == "string" then
+            Lang.Translations[code][english] = translated
+        end
+    end
+    for inst, binding in pairs(Lang.Bound) do
+        if inst.Parent then Lang.Apply(inst, binding) end
+    end
+    return true
+end
+
+function Library:Translate(spec)
+    return Lang.Resolve(spec)
+end
+
+function Library:OnLanguageChanged(callback)
+    if type(callback) == "function" then Lang.OnChange(callback, callback) end
+end
+
+function Library:T(english, thai, indonesian)
+    return { EN = english, ID = indonesian or Lang.Translations.ID[english], TH = thai or Lang.Translations.TH[english] or english }
 end
 
 function Library:SetTheme(name)
@@ -6272,7 +6492,7 @@ function Library:LoadAutoloadConfig()
         return
     end
     local ok, reason = Configs.Load(name)
-    local message = ok and { EN = "Autoloaded: " .. name, TH = "โหลดอัตโนมัติ: " .. name } or { EN = "Autoload failed: " .. tostring(reason), TH = "โหลดอัตโนมัติไม่สำเร็จ: " .. tostring(reason) }
+    local message = ok and { EN = "Autoloaded: " .. name, ID = "Dimuat otomatis: " .. name, TH = "โหลดอัตโนมัติ: " .. name } or { EN = "Autoload failed: " .. tostring(reason), ID = "Muat otomatis gagal: " .. tostring(reason), TH = "โหลดอัตโนมัติไม่สำเร็จ: " .. tostring(reason) }
     self:Notify(Lang.Strings.Configs, message, 3, ok and "Success" or "Error")
 end
 
