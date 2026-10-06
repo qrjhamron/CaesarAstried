@@ -1,4 +1,4 @@
--- Pixel Hub UI · Pixel Playground redesign
+-- Tara UI 3.0 · Pocket Arcade / Pixel Workshop
 -- Legacy option IDs and storage paths retained for saved-config compatibility.
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -13,7 +13,7 @@ local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
 local Library = {
-    Version = "2.0",
+    Version = "3.0",
     Options = {},
     Toggles = {},
     Unloaded = false,
@@ -65,6 +65,7 @@ local Config = {
         Linear = { Enum.EasingStyle.Linear, Enum.EasingDirection.InOut },
         Bounce = { Enum.EasingStyle.Bounce, Enum.EasingDirection.Out },
     },
+    StatusTokens = { Running = "Good", Success = "Good", Waiting = "Coin", Off = "Muted", Error = "Danger" },
     Layer = { Window = 10, Watermark = 30, Float = 40, Key = 45, Overlay = 50, Tooltip = 55, Notify = 60, Intro = 70 },
     LayoutPasses = 12,
     MeasureCacheLimit = 4000,
@@ -224,6 +225,8 @@ Themes.Midnight = ArcadePalette("B699FF", "121426", "252842", "1B1D34")
 Themes.Forest = ArcadePalette("65E0B5", "142D30", "244247", "1C363B")
 Themes.Sunset = ArcadePalette("FFAE70", "302039", "49314D", "3D2842")
 Themes.Frost = ArcadePalette("70BFFF", "172B42", "283F5D", "20334E")
+Themes.Workshop = ArcadePalette("FFAE70", "192735", "283B4C", "223141")
+table.insert(Themes.Order, 1, "Workshop")
 for index, name in ipairs({ "Arcade", "Daylight", "Midnight", "Forest", "Sunset", "Frost" }) do
     table.insert(Themes.Order, index, name)
 end
@@ -271,6 +274,9 @@ local Configs = { Folder = Config.ConfigRoot .. "/default" }
 local KeyGate = {}
 local Intro = {}
 local Widget = {}
+local StatusCard = {}
+StatusCard.__index = StatusCard
+local Mascot = {}
 local Row = {}
 
 local Container = {}
@@ -698,6 +704,7 @@ function Theme.Apply(name)
     for token, color in pairs(palette) do
         Theme.Colors[token] = color
     end
+    Theme.Colors.ActiveAccent = Theme.Colors.Accent
     Theme.Prune()
     for inst, map in pairs(Theme.Bound) do
         Theme.Paint(inst, map)
@@ -1268,6 +1275,93 @@ Sprite.Alias = {
 }
 Sprite.Swaps = {}
 
+
+-- Tara UI: independently authored semantic 16x16 icon pack.
+Sprite.Art["anvil"] = { "................", "................", "................", "................", "................", "..wwwwwwwwwwwww.", "..bwwwwwwwwwwww.", "...bbbbbbbbbb...", "....bbbbbbbbb...", "....bbbbbbbbb...", ".......bbb......", ".......bbb......", ".......bbb......", "....bbbbbbbbb...", "....bbbbbbbbb...", "................" }
+Sprite.Art["hammer"] = { "................", "................", "........wwwww...", "........bbbbb...", "........bbbbb...", "........bbbbb...", "........bbbbb...", "..........yy....", ".........yy.....", "........yy......", ".......yy.......", "......yy........", ".....yy.........", "....yy..........", "................", "................" }
+Sprite.Art["ore"] = { "................", "................", ".........bb.....", ".......bb..b....", ".....bbww..b....", "....bww.....b...", "....bbbbbbbb.b..", "....bbbbbbbb.b..", "...b.bbbbbbb..b.", "..b..bbbbbbb.b..", "..b..bbbbbbb.b..", ".....bbbbbbbb...", "............b...", "...bbbbbbbbb....", "................", "................" }
+Sprite.Art["pickaxe"] = { "................", "........www.....", "....wwwwbbb.....", "...bbbb....b....", "............b...", "..........yy.b..", ".........yy...b.", "........yy......", ".......yy.......", "......y.y.......", "......yy........", ".....yy.........", "....yy..........", "...yy...........", "................", "................" }
+Sprite.Art["sword"] = { "................", "................", "................", "............bw..", "...........bwb..", "..........bwb...", ".........bwb....", "........bwb.....", ".......bwb......", "..y...bwb.......", "...y.bwb........", "....ywb.........", "...ywy..........", "..y...y.........", ".y..............", "................" }
+Sprite.Art["axe"] = { "................", "................", ".......b..bwwww.", "......b...bbbbb.", "......b...bbbbb.", "......b..ybbbbb.", ".....bb..ybbbbb.", ".......bby......", "........yy......", ".......yy.......", "......yy........", "......yy........", ".....yy.........", ".....yy.........", "....yy..........", "................" }
+Sprite.Art["helmet"] = { "................", "................", "................", ".....bbbbbb.....", ".....bbbbbb.....", "...bwwbbbbbbb...", "...bwwbbbbbbb...", "...bwwbbbbbbb...", "...bwwbbbbbbb...", "...bbbkkkkkkk...", "...bbbkkkkkkk...", "...bbb....bbb...", "...bbb....bbb...", "................", "................", "................" }
+Sprite.Art["armor"] = { "................", "................", "................", ".....bkkkkb.....", "..bbbbkkkkbbbb..", "..bbbbbbbbbbbb..", "..bbbbwwbbbbbb..", "..bbbbwwbbbbbb..", ".....bwwbbb.....", ".....bwwbbb.....", ".....bbbbbb.....", ".....yyyyyy.....", ".....yyyyyy.....", "................", "................", "................" }
+Sprite.Art["boots"] = { "................", "................", "................", "...bbbb..bbbb...", "...bbbb..bbbb...", "...bbbb..bbbb...", "...bbbb..bbbb...", "...bbbb..bbbb...", "...bbbb..bbbb...", "...bbbb..bbbb...", "...bbbbb.bbbbb..", "...bbbbb.bbbbb..", "...bbbbb.bbbbb..", "...yyyyy.yyyyy..", "...yyyyy.yyyyy..", "................" }
+Sprite.Art["gloves"] = { "................", "................", ".....b......b...", "...b.b....b.b...", "...b.b....b.b...", "...b.b....b.b...", "..bbbbb..bbbbb..", "..bbbbb..bbbbb..", "..bbbbb..bbbbb..", "..bbbbb..bbbbb..", "..bbbbb..bbbbb..", "..bbbbb..bbbbb..", "..bbbbb..bbbbb..", "..yyyyy..yyyyy..", "..yyyyy..yyyyy..", "................" }
+Sprite.Art["bag"] = { "................", "................", ".....yyyyyy.....", ".....yyyyyy.....", ".....yyyyyy.....", "...bbbbbbbbbb...", "...bbwwbbbbbb...", "...bbwwbbbbbb...", "...bbwyyyyybb...", "...bbwyyyyybb...", "...bbbyyyyybb...", "...bbbbbbbbbb...", "...kkkkkkkkkk...", "...bbbbbbbbbb...", "................", "................" }
+Sprite.Art["coinbag"] = { "................", "................", ".....yyyyyy.....", ".....yyyyyy.....", ".....y....y.....", "....y......y....", "...y...kk...y...", "...yyykkkkkyy...", "...yyyykkyyyy...", "...yyyykkyyyy...", "...yykkkkkyyy...", "...yyyykkyyyy...", "...yyyyyyyyyy...", "....yyyyyyyy....", "....yyyyyyyy....", "................" }
+Sprite.Art["coin-stack"] = { "................", "................", "................", "................", "................", "........ywwwwy..", "........yyyyyy..", "........yyyyyy..", "...wwwwwwyyyyyy.", "...yyyyyyyyyyyy.", "...yyyyyyyyyyyy.", "..yyyyyyy.......", "..yyyyyyy.......", "..yyyyyyy.......", "................", "................" }
+Sprite.Art["chest"] = { "................", "................", "................", "...wwwwwwwwwb...", "...bbbbbbbbbb...", "...bbbbbbbbbb...", "..yyyyyyyyyyyy..", "..yyyyyyyyyyyy..", "..yyyyywwyyyyy..", "..kkkkkwwkkkkk..", "..yyyyywwyyyyy..", "..yyyyywwyyyyy..", "..yyyyyyyyyyyy..", "..yyyyyyyyyyyy..", "................", "................" }
+Sprite.Art["chest-open"] = { "................", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "..y..gggggg..y..", "...y.gggggg.y...", "....yggggggy....", "..yyyyyyyyyyyy..", "..yyyyywwyyyyy..", "..yyyyywwyyyyy..", "..yyyyywwyyyyy..", "..yyyyyyyyyyyy..", "................", "................" }
+Sprite.Art["tower"] = { "................", "................", "...bbb.bb.bbb...", "...bbb.bb.bbb...", "...bbbbbbbbbb...", "....bbbbbbbb....", "....bbyyyybb....", "....bbyyyybb....", "....bbbbbbbb....", "....bbbbbbbb....", "....bbbkkbbb....", "....bbbkkbbb....", "....bbbkkbbb....", "....bbbkkbbb....", "....bbbkkbbb....", "................" }
+Sprite.Art["castle-gate"] = { "................", "................", "................", ".bbbb......bbbb.", ".bbbb......bbbb.", ".byyb......byyb.", ".byybbbbbbbbyyb.", ".bbbbbbbbbbbbbb.", ".bbbbbbbbbbbbbb.", ".bbbbbbbbbbbbbb.", ".bbbbkkkkkkbbbb.", ".bbbbkkkkkkbbbb.", ".bbbbkkkkkkbbbb.", ".bbbbkkkkkkbbbb.", ".bbbbkkkkkkbbbb.", "................" }
+Sprite.Art["crown"] = { "................", "................", ".......y........", ".y.....yy.....y.", ".yy...y.y....yy.", ".y.y..y..y..y.y.", "..y.yy...y.y..y.", "..y..y....y..y..", "..y..........y..", "..y..........y..", "..yyyyyyyyyyyy..", "..yyyyyryyyyyy..", "..yyyyyyyyyyyy..", "..yyyyyyyyyyyy..", "................", "................" }
+Sprite.Art["boss"] = { "................", "..y..........y..", "..y.........y...", "...y........y...", "...ryrrrrrrry...", "...ryrrrrrryr...", "...rwwwrrwwwr...", "...rwwwrrwwwr...", "...rrrrrrrrrr...", "...rrrrrrrrrr...", "...rrkkkkkkrr...", "...rrkkkkkkrr...", ".....rrrrrr.....", "................", "................", "................" }
+Sprite.Art["skull"] = { "................", "................", "................", "...wwwwwwwwww...", "...wwwwwwwwww...", "...wwwwwwwwww...", "...wkkkwwkkkw...", "...wkkkwwkkkw...", "...wkkkwwkkkw...", "...wwwwwwwwww...", "...wwwwkwwwww...", ".....wwwwww.....", ".....wkwwkw.....", ".....wkwwkw.....", "................", "................" }
+Sprite.Art["level-up"] = { "................", ".......g........", "......g.g.......", ".....g...g......", "....g.....g.....", "...g..ggg..g....", "..g...ggg...g...", "......ggg.......", "......ggg.......", "......ggg.......", "......ggg.......", "......ggg.......", "................", "...yyyyyyyyyy...", "................", "....yyyyyyyy...." }
+Sprite.Art["rebirth"] = { "................", "................", "......bb........", "....bb..gbb.....", "...b...g...bb...", "......gggg..b...", "......gggg..b...", "yyyy..gggg...b..", "..b...gggg...b..", "...b..gggg...b..", "...b..gggg..b...", "....b.......b...", "....bbbb...b....", "........bbb.....", "................", "................" }
+Sprite.Art["xp"] = { "................", "................", "................", "................", "................", "..b...b..yyyyy..", "...b.b...y...y..", "...b.b...y...y..", "....b....yyyyy..", "...b.b...y......", "...b.b...y......", "..b...b..y......", "................", "................", "................", "................" }
+Sprite.Art["potion"] = { "................", "......yyyy......", "......yyyy......", "......yyyy......", "......bbbb......", "......bbbb......", "......bbbb......", "...bwwbbbbbbb...", "...bwbbbbbbbb...", "...bwgggggggb...", "...bwgggggggb...", "...bggggggggb...", "...bggggggggb...", "....gggggggg....", "................", "................" }
+Sprite.Art["flask"] = { "................", "......wwww......", "......wwww......", "......b..b......", "......b..b......", "......b..b......", "......b..b......", ".....b....b.....", ".....w....b.....", "....w......b....", "...b........b...", "...gggggggggg...", "..bggggggggggb..", "...gggggggggg...", "...gggggggggg...", "................" }
+Sprite.Art["scroll"] = { "................", "................", "..yyyyyyyyyyy...", "..yyyyyyyyyyy...", "....wwwwwwww....", "....wwwwwwww....", "....wkkkkkkw....", "....wwwwwwww....", "....wwwwwwww....", "....wkkkkwww....", "....wwwwwwww....", "....wwwwwwww....", "...yyyyyyyyyyy..", "...yyyyyyyyyyy..", "................", "................" }
+Sprite.Art["book"] = { "................", "................", "................", "..bbbbbkgggggg..", "..bbbbbkgggggg..", "..bwwwwkgwwwwg..", "..bbbbbkgggggg..", "..bbbbbkgggggg..", "..bwwwwkgwwwwg..", "..bbbbbkgggggg..", "..bbbbbkgggggg..", "..bbbbbkgggggg..", "..bbbbbkgggggg..", "..bbbbbkgggggg..", "................", "................" }
+Sprite.Art["rune"] = { "................", ".......b........", "......b.b.......", ".....b...b......", "....by....y.....", "....b.y..y.b....", "...b...yy...b...", "..b....yy....b..", "...b..y..y..b...", "...b.y.y..yb....", "....b..y..b.....", ".....b.y..b.....", "......by.b......", "......b.b.......", ".......b........", "................" }
+Sprite.Art["gem-red"] = { "................", "................", ".......r........", "......rwrr......", "....rrw...r.....", "...r.wrrrrrrr...", "..r.wrrrrrr..r..", "...r.rrrrrr.r...", "...r.rrrrrrr....", "....r.....r.....", ".....r....r.....", "......r..r......", "......r.r.......", ".......r........", "................", "................" }
+Sprite.Art["gem-green"] = { "................", "................", "....gggggggg....", "...g........g...", "..g.wwwwwwwgg...", "..g.gggggggg.g..", ".g..gggggggg..g.", "..g.gggggggg.g..", "...gggggggggg...", "....g.......g...", "....g......g....", ".....g....g.....", "......g...g.....", ".......g.g......", "........g.......", "................" }
+Sprite.Art["gem-purple"] = { "................", "................", ".....rrrrrr.....", ".....rrrrrr.....", "...bbwbbbbbbb...", "...bbwbbbbbbb...", "...bbbwrrrrbb...", "...bbbwrrrrbb...", "...bbbwrrrrbb...", "...bbbbbbbbbb...", "....b......b....", ".....b....b.....", ".....b...b......", "......b.b.......", ".......b........", "................" }
+Sprite.Art["star-medal"] = { "................", "....bbb..rrr....", "....bbb..rrr....", "....bbb..rrr....", "....bbb..rrr....", "....bbb..rrr....", "....yyyyyyyy....", "....yywwwwyy....", "....yyyyyyyy....", "....yyyyyyyy....", "....yyykyyyy....", "....yyyyyyyy....", "....yyyyyyyy....", ".....yyyyyy.....", "................", "................" }
+Sprite.Art["trophy"] = { "................", "................", "....yyyyyyyy....", ".yyyyyyyyyyyyyy.", ".y.yyyyyyyyyy.y.", ".y.yyyyyyyyyy.y.", ".y.yyyyyyyyyy.y.", ".yyyyyyyyyyyyyy.", "......yyyy......", "......yyyy......", "......yyyy......", ".......yy.......", ".......yy.......", "....bbbbbbbb....", "....bbbbbbbb....", "................" }
+Sprite.Art["quest-board"] = { "................", "................", "..yyyyyyyyyyyy..", "..yyyyyyyyyyyy..", "..yywwwwwwwwyy..", "..yywkkkkkkwyy..", "..yywwwwwwwwyy..", "..yywkkkkwwwyy..", "..yywwwwwwwwyy..", "..yywwwwwwwwyy..", "..yywwwwwwwwyy..", "..yyyyyyyyyyyy..", "..yyyyyyyyyyyy..", "....yy....yy....", "....yy....yy....", "....yy....yy...." }
+Sprite.Art["compass"] = { "................", ".......y........", "..bbbbbbbbbbbb..", "..b..........b..", "..b.....w....b..", "..b.....w....b..", "..b....r.w...b..", "..b...r..w...b..", "..b...r..w...b..", "..b...r...w..b..", "..b..wwwwww..b..", "..b..........b..", "..b..........b..", "..bbbbbbbbbbbb..", ".......y........", "................" }
+Sprite.Art["map-scroll"] = { "................", "................", "................", "......yyyyy.....", ".wwwwwyyyyywwww.", ".wwwwwyyyyywwww.", ".wwbbwyyyyybrww.", ".wwwwbbyyybwwww.", ".wwwwwybbbywwww.", ".wwwwwyyyyywwww.", ".wwwwwyyyyywwww.", ".wwwwwyyyyywwww.", ".wwwww.....wwww.", "................", "................", "................" }
+Sprite.Art["location"] = { "................", "................", "....rrrrrrrr....", "....rrrrrrrr....", "....rrkkkkrr....", "....rrkkkkrr....", "....rrkkkkrr....", "....rrrrrrrr....", "....rrrrrrrr....", "....r......r....", ".....r....r.....", ".....r...r......", "......r..r......", "......r.r.......", ".......r........", "................" }
+Sprite.Art["campfire"] = { "................", "................", ".......y........", "......r.y.......", "......r.y.......", "......ry.y......", ".....r..y.y.....", "....r...y.y.....", "....r...y..y....", "....rrrrrrrr....", "....rrrrrrrr....", "....rrrrrrrr....", "................", "...bbbbbbbbbb...", "...bbbbbbbbbb...", "................" }
+Sprite.Art["flame"] = { "................", "........r.......", ".......r.r......", "......r...r.....", "......r...r.....", ".....r.y...r....", "....r..y....r...", "...r..y......r..", "...r..yyyy...r..", "...r..yyyy..r...", "....r.yyyy..r...", "....r.yyyy..r...", "....rryyyy.r....", "........rrrr....", "................", "................" }
+Sprite.Art["cloud"] = { "................", "................", "................", "................", "....bwwwb.......", "....bbbbb.......", "....bbbbbbbb....", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "................", "................", "................", "................" }
+Sprite.Art["sun"] = { "................", ".......y........", ".......y........", "...y...y....y...", "................", ".....yyyyyy.....", ".....yyyyyy.....", ".yyy.yyyyyy.yyy.", ".....yyyyyy.....", ".....yyyyyy.....", ".....yyyyyy.....", "................", "...y...y....y...", ".......y........", ".......y........", "................" }
+Sprite.Art["moon"] = { "................", "................", ".......bb.......", ".....bb.....y...", "...bb...........", "...bbb..........", "...bbb..........", "..bbbb..........", "..bbbb..........", "..bbbb..........", "..bbbb......b...", "...bbbbbbbbb....", ".....bbbbbb.....", ".......b........", "................", "................" }
+Sprite.Art["snowflake"] = { "................", ".......b........", ".......b........", "...b...b...b....", "....b..b..b.....", ".....b.b.b......", "......bbb.......", ".bbbbbbwbbbbbbb.", "......bbb.......", ".....b.b.b......", "....b..b..b.....", "...b...b...b....", ".......b........", ".......b........", ".......b........", "................" }
+Sprite.Art["forest-tree"] = { "................", ".......g........", "......g.g.......", ".....g...g......", "....g.....g.....", "....g.....g.....", "...g.......g....", "..ggggggggggg...", "...ggggggggg....", "...ggggggggg....", "..ggggggggggg...", "..ggggggggggg...", "......yyy.......", "......yyy.......", "......yyy.......", "................" }
+Sprite.Art["diskette"] = { "................", "................", "..bbwwwwwwwbbb..", "..bbwwwwkkwbbb..", "..bbwwwwkkwbbb..", "..bbwwwwkkwbbb..", "..bbwwwwwwwbbb..", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "..bbyyyyyyyybb..", "..bbyyyyyyyybb..", "..bbykkkkkkybb..", "..bbyyyyyyyybb..", "..bbyyyyyyyybb..", "................", "................" }
+Sprite.Art["folder"] = { "................", "................", "................", "..yyyyyy........", "..yyyyyy........", "..yyyyyy........", ".yyyyyyyyyyyyyy.", ".yywwwwwwwwwwyy.", ".yywwwwwwwwwwyy.", ".yyyyyyyyyyyyyy.", ".yyyyyyyyyyyyyy.", ".yyyyyyyyyyyyyy.", ".yyyyyyyyyyyyyy.", ".yyyyyyyyyyyyyy.", "................", "................" }
+Sprite.Art["settings-sliders"] = { "................", "................", "....yyy.........", "....yyy.........", "..bbyyybbbbbbb..", "....yyy.........", "....yyy..ggg....", ".........ggg....", "..bbbbbbbgggbb..", ".........ggg....", "......rrrggg....", "......rrr.......", "..bbbbrrrbbbbb..", "......rrr.......", "......rrr.......", "................" }
+Sprite.Art["palette"] = { "................", "................", ".....bbbbbb.....", "...bbbbbbbbbb...", "...bbbbbbrbbb...", "...bbybbbbbbb...", "...bbbbbbbbbb...", "...bbbbbbbbgb...", "...bbbbbbbbbb...", "...bbwbbbbbbb...", "...bbbbbbkkkk...", "...bbbbbbkkkk...", "....bbbbbkkkk...", "....bbbbb.......", "................", "................" }
+Sprite.Art["volume"] = { "................", "................", "................", "........b....g..", ".......bb.....g.", "......bbb..y..g.", "..bbbb.bb...y..g", "..bbbb.bb...y..g", "..bbbb.bb...y..g", "..bbbb.bb..y...g", "......bbb..y..g.", ".......bb.....g.", ".............g..", "................", "................", "................" }
+Sprite.Art["mute"] = { "................", "................", "................", "........b.......", ".......bb.......", "......bbb.r...r.", "..bbbb.bb..r.r..", "..bbbb.bb...r...", "..bbbb.bb...r...", "..bbbb.bb..r.r..", "......bbb.r...r.", ".......bb.......", "................", "................", "................", "................" }
+Sprite.Art["keyboard"] = { "................", "................", "................", "................", ".bbbbbbbbbbbbbb.", ".b............b.", ".b.ww.ww.ww.w.b.", ".b............b.", ".b.ww.ww.wwww.b.", ".b............b.", ".b..yyyyyyyy..b.", ".b............b.", ".bbbbbbbbbbbbbb.", "................", "................", "................" }
+Sprite.Art["gamepad"] = { "................", "................", "................", "................", "...bbbbbbbbbb...", "...bbbbbbbbbb...", "...bwbbbbbbrb...", ".bbwwwwbbbbbbbb.", ".bbbwbbbbbbbybb.", ".bbbwbbbbbbbbbb.", ".bbbbbbbbbbbbbb.", ".bbbb......bbbb.", ".bbbb......bbbb.", ".bbbb......bbbb.", "................", "................" }
+Sprite.Art["phone"] = { "................", "....bbbbbbbb....", "....bbbbbbbb....", "....bkkkkkkb....", "....bkggggkb....", "....bkggggkb....", "....bkggggkb....", "....bkggggkb....", "....bkggggkb....", "....bkggggkb....", "....bkkkkkkb....", "....bkkkkkkb....", "....bbbbbbbb....", "....bbbwbbbb....", "....bbbbbbbb....", "................" }
+Sprite.Art["cursor"] = { "................", "...w............", "...ww...........", "...w.w..........", "...w..w.........", "...w...w........", "...w....w.......", "...w.....w......", "...w......w.....", "...w...www.w....", "...w..wb..www...", "...w.w..b.......", "...ww...b.......", "...w.....b......", "..........b.....", "................" }
+Sprite.Art["pin"] = { "................", "................", ".....rrrrrr.....", ".....rrrrrr.....", ".....rrrrrr.....", "......rrrr......", "......rrrr......", "......rrrr......", "......rrrr......", "....rrrrrrrr....", "....rrrrrrrr....", ".......w........", ".......w........", ".......w........", ".......w........", "................" }
+Sprite.Art["pause"] = { "................", "................", "................", "...yyyy..yyyy...", "...yyyy..yyyy...", "...yyyy..yyyy...", "...yyyy..yyyy...", "...yyyy..yyyy...", "...yyyy..yyyy...", "...yyyy..yyyy...", "...yyyy..yyyy...", "...yyyy..yyyy...", "...yyyy..yyyy...", "................", "................", "................" }
+Sprite.Art["stop"] = { "................", "................", "................", "...rrrrrrrrrr...", "...rrrrrrrrrr...", "...rrwwwwwwrr...", "...rrwrrrrwrr...", "...rrwrrrrwrr...", "...rrwrrrrwrr...", "...rrwrrrrwrr...", "...rrwwwwwwrr...", "...rrrrrrrrrr...", "...rrrrrrrrrr...", "................", "................", "................" }
+Sprite.Art["clock"] = { "................", ".......y........", "..bbbbbbbbbbbb..", "..b..........b..", "..b....w.....b..", "..b....w.....b..", "..b....w.....b..", "..b....w.....b..", "..b....wwww..b..", "..b..........b..", "..b..........b..", "..b..........b..", "..b..........b..", "..bbbbbbbbbbbb..", "................", "................" }
+Sprite.Art["signal"] = { "................", "................", "................", "..........ggg...", "..........ggg...", "..........ggg...", "..........ggg...", "......ggg.ggg...", "......ggg.ggg...", "......ggg.ggg...", "......ggg.ggg...", "..ggg.ggg.ggg...", "..ggg.ggg.ggg...", "..ggg.ggg.ggg...", "................", "................" }
+Sprite.Art["list"] = { "................", "................", "................", "..yy..wwwwwwww..", "..yy............", "................", "................", "..yy..wwwwwwww..", "..yy............", "................", "................", "..yy..wwwwwwww..", "..yy............", "................", "................", "................" }
+Sprite.Art["grid"] = { "................", "................", "..bbbbb..ggggg..", "..b...b..g...g..", "..b...b..g...g..", "..b...b..g...g..", "..bbbbb..ggggg..", "................", "................", "..yyyyy..rrrrr..", "..y...y..r...r..", "..y...y..r...r..", "..y...y..r...r..", "..yyyyy..rrrrr..", "................", "................" }
+Sprite.Art["filter"] = { "................", "................", ".bbbbbbbbbbbbbb.", "..b..........b..", "...b........b...", "....b.......b...", "....b......b....", ".....b....b.....", "......yyyy......", "......yyyy......", "......yyyy......", "......yyyy......", "......yyyy......", "......y.........", "......y.........", "................" }
+Sprite.Art["lock"] = { "................", ".....yyyyyy.....", ".....y....y.....", ".....y....y.....", ".....y....y.....", ".....y....y.....", ".....y....y.....", "...bbbbbbbbbb...", "...bbbbbbbbbb...", "...bbbbkkbbbb...", "...bbbbkkbbbb...", "...bbbbkkbbbb...", "...bbbbbbbbbb...", "...bbbbbbbbbb...", "................", "................" }
+Sprite.Art["unlock"] = { "................", ".....yyyyyy.....", ".....y....y.....", ".....y....y.....", ".....y....y.....", ".....y..........", ".....y..........", "...gggggggggg...", "...gggggggggg...", "...ggggkkgggg...", "...ggggkkgggg...", "...ggggkkgggg...", "...gggggggggg...", "...gggggggggg...", "................", "................" }
+Sprite.Art["link-chain"] = { "................", "................", "................", ".bbbbbbb........", ".b.....b........", ".b.....b........", ".b...w.b........", ".b....wwggggggg.", ".bbbbbbbww....g.", "........g.w...g.", "........g.....g.", "........g.....g.", "........ggggggg.", "................", "................", "................" }
+Sprite.Art["lightning"] = { "................", "........y.......", ".......yy.......", ".......yy.......", "......y.y.......", ".....y..y.......", "....y...yyyyyy..", "....y.......y...", "...yyyyyy..y....", "........y.y.....", ".......y.y......", "......y.y.......", "......yy........", "......y.........", ".....y..........", "................" }
+Sprite.Art["health"] = { "................", "................", "......gggg......", "......gggg......", "......gggg......", "......gggg......", "..gggggggggggg..", "..gggggggggggg..", "..gggggggggggg..", "..gggggggggggg..", "......gggg......", "......gggg......", "......gggg......", "......gggg......", "................", "................" }
+Sprite.Art["speed"] = { "................", "................", "................", ".......b........", "......b.bb......", "......b...b.....", ".....b.....yb...", "....b.....y..b..", "....b....y...b..", "...b....y....b..", "...b...y.....b..", "..b..........b..", "....wwwwwwww....", "................", "................", "................" }
+Sprite.Art["network"] = { "................", "......bbbb......", "......bbbb......", "......bbbb......", "......bbbb......", ".......w........", ".......w........", ".......w........", "...wwwwwwwwww...", "...w........w...", ".ggggg....ggggg.", ".ggggg....ggggg.", ".ggggg....ggggg.", ".ggggg....ggggg.", "................", "................" }
+Sprite.Art["chart"] = { "................", "................", "..b.............", "..b...........g.", "..b..........g..", "..b.........g...", "..b....g....g...", "..b...g.gg.g....", "..b...g...g.....", "..b..g..........", "..b.g...........", "..b.............", "..b.............", "..bbbbbbbbbbbbb.", "................", "................" }
+Sprite.Art["notification"] = { "................", "................", "............r...", ".....yyyyyy.....", ".....yyyyyy.....", ".....yyyyyy.....", "....yyyyyyyy....", "....yyyyyyyy....", "....yyyyyyyy....", "....yyyyyyyy....", "....yyyyyyyy....", "..yyyyyyyyyyyy..", "..yyyyyyyyyyyy..", "......wwww......", "......wwww......", "................" }
+Sprite.Art["robot-happy"] = { "................", ".......yy.......", ".......yy.......", "................", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "..bbbwwbbwwbbb..", "..bbwbbbbbbwbb..", "..bbbbbbbbbbbb..", "..bbbggggggbbb..", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "....bbb..bbb....", "....bbb..bbb....", "....bbb..bbb....", "................" }
+Sprite.Art["robot-error"] = { "................", ".......yy.......", ".......yy.......", "................", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "..bbrbrbbrbrbb..", "..bbbrbbbbrbbb..", "..bbrbrbbrbrbb..", "..bbbbbbbbbbbb..", "..bbbbrrrrbbbb..", "..bbbbbbbbbbbb..", "....bbb..bbb....", "....bbb..bbb....", "....bbb..bbb....", "................" }
+Sprite.Art["robot-idle"] = { "................", ".......yy.......", ".......yy.......", "................", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "..bbwwwbbwwwbb..", "..bbwwwbbwwwbb..", "..bbbbbbbbbbbb..", "..bbbbggggbbbb..", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "....bbb..bbb....", "....bbb..bbb....", "....bbb..bbb....", "................" }
+Sprite.Art["robot-work"] = { "................", ".......yy.......", ".......yy.......", "................", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "..bbbbbbbwwwbb..", "..bbyyybbwwwbb..", "..bbbbbbbbbbbb..", "..bbbbggggbbbb..", "..bbbbbbbbbbbb..", "..bbbbbbbbbbbb..", "....bbb..bbby...", "....bbb..bbb.y..", "....bbb..bbb..y.", "................" }
+Sprite.Alias.save = "diskette"
+Sprite.Alias.upload = "coinbag"
+Sprite.Alias.download = "folder"
+Sprite.Alias.swords = "sword"
+Sprite.Alias.combat = "sword"
+Sprite.Alias.zap = "lightning"
+Sprite.Alias["sliders-horizontal"] = "settings-sliders"
+Sprite.Alias.bell = "notification"
+Sprite.Alias.castle = "castle-gate"
+
 Sprite.Templates = {}
 
 function Sprite.Resolve(name)
@@ -1404,6 +1498,7 @@ function Container:Add(frame, spec)
         spec.Child:SetParent(self)
     end
     self:MarkDirty()
+    if self.Window then self.Window.AccentDirty = true end
     return item
 end
 
@@ -1553,6 +1648,10 @@ function Container:Commit(height)
 end
 
 function Layout.Flush()
+    if State.Window and State.Window.AccentDirty then
+        State.Window.AccentDirty = false
+        State.Window:ApplyAccent()
+    end
     for _ = 1, Config.LayoutPasses do
         if next(Layout.Dirty) == nil then
             return
@@ -1912,7 +2011,7 @@ function Toggle:Render(instant)
         Anim.Tween(self.Track, { BackgroundColor3 = Theme.Colors[on and "Good" or "Track"] }, duration)
         Anim.Tween(self.Knob, { Position = UDim2.new(0, on and travel or 3, 0.5, 0) }, duration, "Back")
     else
-        Anim.Tween(self.Track, { BackgroundColor3 = Theme.Colors[on and "Coin" or "Element"] }, duration)
+        Anim.Tween(self.Track, { BackgroundColor3 = Theme.Colors[on and "Good" or "Element"] }, duration)
         if on and not instant then
             Anim.Pop(self.MarkScale, 0.4)
         end
@@ -2372,7 +2471,7 @@ end
 function Button:BindPress()
     local face, hit = self.Face, self.Hit
     local faceColor = function()
-        return Theme.Colors[self.Style.Face]
+        return Theme.Colors[self.Style.Face == "Accent" and "ActiveAccent" or self.Style.Face]
     end
     hit.MouseEnter:Connect(function()
         if not State.Touch then
@@ -2409,7 +2508,7 @@ function Button:Click()
         return
     end
     self:Disarm()
-    Anim.Burst(self.Holder, UDim2.fromScale(0.5, 0.5), self.Style.Face)
+    Anim.Bump(self.Face, 1)
     Util.Try(self.Func)
 end
 
@@ -2444,6 +2543,82 @@ end
 function Button:SetVisible(visible)
     self.Item.Hidden = not visible
     self.Container:MarkDirty()
+end
+
+-- Read-only dashboard cards. Values never animate as proof of game success.
+function Container:AddStatCard(info)
+    info = info or {}
+    local frame = Draw.Box("Frame", { Name = "StatCard" }, "Element", "Outline", 0, 2)
+    local selfCard = setmetatable({ Frame = frame, Container = self }, StatusCard)
+    selfCard:SetIcon(info.Icon or "chart")
+    selfCard.Title = Draw.Text({ Position = UDim2.fromOffset(56, 8), Size = UDim2.new(1, -68, 0, 20),
+        TextTruncate = Enum.TextTruncate.AtEnd, Parent = frame }, "Strong", 14, "SubText", info.Title or "")
+    selfCard.Value = Draw.Text({ Position = UDim2.fromOffset(56, 30), Size = UDim2.new(1, -68, 0, 24),
+        TextTruncate = info.Multiline and Enum.TextTruncate.None or Enum.TextTruncate.AtEnd,
+        TextWrapped = info.Multiline == true, TextYAlignment = Enum.TextYAlignment.Top,
+        Parent = frame }, "Strong", info.Multiline and 14 or 20, "Text", tostring(info.Value or "—"))
+    if info.Multiline then selfCard.Value.Size = UDim2.new(1, -68, 0, 62) end
+    selfCard.Status = Draw.Text({ Position = UDim2.fromOffset(12, 60), Size = UDim2.new(1, -24, 0, 20),
+        TextTruncate = Enum.TextTruncate.AtEnd, Parent = frame }, "Desc", 13, "Muted", "")
+    if info.Multiline then selfCard.Status.Position = UDim2.fromOffset(12, 100) end
+    selfCard.Item = self:Add(frame, { Height = info.Multiline and 130 or 90, Search = Lang.SearchText(info.Title) })
+    selfCard:SetStatus(info.Status or "Off", info.Note)
+    return selfCard
+end
+
+function StatusCard:SetIcon(name)
+    if self.Icon then self.Icon:Destroy() end
+    self.Icon = Sprite.New(self.Frame, name, 32)
+    self.Icon.Position = UDim2.fromOffset(12, 12)
+end
+
+function StatusCard:SetValue(value)
+    self.Value.Text = tostring(value)
+end
+
+function StatusCard:SetStatus(status, note)
+    local token = Config.StatusTokens[status] or "Muted"
+    Theme.Bind(self.Status, { TextColor3 = token })
+    self.Status.Text = (status == "Running" and "> " or status == "Error" and "! " or "• ")
+        .. status .. (note and (" / " .. tostring(note)) or "")
+end
+
+function Mascot.Build(parent)
+    Mascot.Holder = Draw.New("Frame", { Name = "Mascot", BackgroundTransparency = 1,
+        AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 8, 0.5, 0), Size = UDim2.fromOffset(32, 32), Parent = parent })
+    Mascot:SetPose("robot-idle")
+end
+
+function Mascot:SetPose(name)
+    if not self.Holder or not self.Holder.Parent then return end
+    if self.Sprite then self.Sprite:Destroy() end
+    self.Sprite = Sprite.New(self.Holder, name, 32)
+end
+
+function Mascot:React(kind)
+    if not self.Holder or not self.Holder.Parent then return end
+    self.Token = (self.Token or 0) + 1
+    local token = self.Token
+    self:SetPose(kind == "Error" and "robot-error" or kind == "Working" and "robot-work" or "robot-happy")
+    if kind == "Error" then Anim.Shake(self.Sprite) else Anim.Bump(self.Sprite, 5) end
+    task.delay(1.2, function()
+        if self.Token == token and not Library.Unloaded then self:SetPose("robot-idle") end
+    end)
+end
+
+-- Caller invokes feedback only after confirming the relevant operation.
+function Library:Feedback(kind)
+    Mascot:React(kind)
+    local holder = Mascot.Holder
+    if not holder or State.ReduceMotion or State.AnimationIntensity == "Low" or not Anim.Activity(holder) then return end
+    Anim.Burst(holder, UDim2.fromScale(0.5, 0.5), kind == "Error" and "Danger" or "Good")
+    if kind == "Forge" or kind == "Save" then
+        local icon = Sprite.New(holder, kind == "Forge" and "hammer" or "diskette", 24)
+        icon.Position = UDim2.fromOffset(16, -4)
+        icon.Rotation = -25
+        local tween = Anim.Tween(icon, { Position = UDim2.fromOffset(16, 4), Rotation = 20 }, 0.18, "Back", 0, true)
+        tween.Completed:Once(function() icon:Destroy() end)
+    end
 end
 
 function Container:AddLabel(text, wrap)
@@ -2725,6 +2900,10 @@ function Popup.Place(card, anchor)
     -- AbsolutePosition นับจากใต้แถบ inset ของ Roblox แต่ overlay นับจากขอบจอ ต้องชดเชย
     local origin, size = anchor.AbsolutePosition - State.Gui.AbsolutePosition, anchor.AbsoluteSize
     local x = math.clamp(origin.X, 8, math.max(8, viewport.X - width - 8))
+    if (State.Touch or (State.Window and State.Window.MobileDrawer)) and card.Name == "Popup" then
+        card.Position = UDim2.fromOffset(math.max(8, (viewport.X - width) / 2), math.max(8, (viewport.Y - height) / 2))
+        return
+    end
     local y = origin.Y + size.Y + 6
     if y + height > viewport.Y - 8 then
         y = math.max(8, origin.Y - height - 6)
@@ -2764,7 +2943,10 @@ function Popup.List(options)
     local itemHeight = Util.Metric("Item")
     local searchHeight = options.Search and (Util.Metric("Box") + 6) or 0
     local width = math.floor(math.max(Config.Dropdown.MinWidth, options.Anchor.AbsoluteSize.X / State.UserScale))
-    local listHeight = math.max(1, math.min(#options.Values, Config.Dropdown.MaxVisible)) * (itemHeight + 2) + 6
+    local viewport = State.Gui.AbsoluteSize / State.UserScale
+    if State.Touch or (State.Window and State.Window.MobileDrawer) then width = math.max(160, viewport.X - 32) end
+    local desired = math.max(1, math.min(#options.Values, Config.Dropdown.MaxVisible)) * (itemHeight + 2) + 6
+    local listHeight = math.max(itemHeight, math.min(desired, viewport.Y - searchHeight - 80))
     local card, face, scale = Popup.Card(width, listHeight + searchHeight + 12)
     local scroll = Layout.ScrollFrame({ Position = UDim2.fromOffset(6, 6 + searchHeight), Size = UDim2.new(1, -12, 0, listHeight), Parent = face })
     local list = Container.New(scroll, { PadX = 2, PadY = 2, GapY = 2 })
@@ -3325,7 +3507,7 @@ function Window.New(options)
         size = Vector2.new(size.X.Offset, size.Y.Offset)
     end
     local self = setmetatable({
-        Title = options.Title or "Pixel Hub",
+        Title = options.Title or "Tara UI",
         SubTitle = options.SubTitle or "",
         Desired = size,
         Size = size,
@@ -3344,6 +3526,8 @@ function Window.New(options)
     self:BuildSidebar()
     self:BuildMain()
     self:BuildGround()
+    self:BuildMiniBar()
+    self:BuildDrawer()
     self:FitViewport()
     Util.Connect(State.Gui:GetPropertyChangedSignal("AbsoluteSize"), function()
         self:FitViewport()
@@ -3377,7 +3561,13 @@ function Window:BuildTopbar()
     self:BuildDecor(topbar)
     local left = Draw.New("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -200, 1, -3), ZIndex = 4, Parent = topbar })
     Draw.List(left, 10, true, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
-    self.Emblem = Draw.Emblem(left, 32)
+    self.Emblem = Draw.New("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(32, 32), Parent = left })
+    Mascot.Build(self.Emblem)
+    Util.Every(4, function()
+        if self.Visible and not self.Minimized and not State.ReduceMotion and State.AnimationIntensity ~= "Low" then
+            if Mascot.Sprite then Anim.Bump(Mascot.Sprite, 2) end
+        end
+    end)
     self:BuildTitle(left)
     self.SubtitlePill = self:BuildPill(left, self.SubTitle)
     local right = Draw.New("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 0), Size = UDim2.new(0, 180, 1, -3), ZIndex = 4, Parent = topbar })
@@ -3555,6 +3745,73 @@ function Window:BuildMain()
     Particles.Build(main)
 end
 
+function Window:BuildMiniBar()
+    local bar = Draw.Box("Frame", { Name = "MiniSession", Position = UDim2.fromOffset(0, Config.Window.Topbar),
+        Size = UDim2.new(1, 0, 0, 44), Visible = false, ZIndex = 8, Parent = self.Body }, "Panel")
+    self.MiniBar = bar
+    self.MiniStatus = Draw.Text({ Text = "• Off / Idle", Position = UDim2.fromOffset(10, 2),
+        Size = UDim2.new(1, -110, 1, -4), TextTruncate = Enum.TextTruncate.AtEnd, Parent = bar }, "Strong", 13, "Muted")
+    local off = Draw.Box("TextButton", { Position = UDim2.new(1, -94, 0, 6),
+        Size = UDim2.fromOffset(84, 32), Parent = bar }, "Danger", "Outline", 0, 2)
+    Draw.Text({ Text = "ALL OFF", Size = UDim2.fromScale(1, 1), TextXAlignment = Enum.TextXAlignment.Center,
+        Parent = off }, "Strong", 12, "Ink")
+    off.Activated:Connect(function()
+        if self.AllOff then Util.Try(self.AllOff); self:SetSessionStatus("Stopped", 0, "Off") end
+    end)
+    self.MiniOff = off
+    off.Visible = false
+end
+
+function Window:SetAllOff(callback)
+    self.AllOff = type(callback) == "function" and callback or nil
+    self.MiniOff.Visible = self.AllOff ~= nil
+end
+
+function Window:SetSessionStatus(text, count, status)
+    status = status or "Off"
+    self.MiniStatus.Text = (status == "Running" and "> " or status == "Error" and "! " or "• ")
+        .. tostring(text or "Idle") .. " / " .. tostring(count or 0) .. " active"
+    Theme.Bind(self.MiniStatus, { TextColor3 = Config.StatusTokens[status] or "Muted" })
+end
+
+function Window:BuildDrawer()
+    self.DrawerOpen = false
+    self.DrawerShade = Draw.New("TextButton", { Text = "", BackgroundColor3 = Color3.new(0, 0, 0),
+        BackgroundTransparency = 0.45, Position = UDim2.fromOffset(0, Config.Window.Topbar),
+        Visible = false, ZIndex = 7, Parent = self.Body })
+    self.DrawerShade.Activated:Connect(function() self:SetDrawer(false) end)
+    self.DrawerButton = Draw.Box("TextButton", { Position = UDim2.fromOffset(12, 8),
+        Size = UDim2.fromOffset(44, 44), Visible = false, ZIndex = 6, Parent = self.Main }, "Element", "Outline", 0, 2)
+    Sprite.New(self.DrawerButton, "list", 32).Position = UDim2.fromOffset(6, 6)
+    self.DrawerButton.Activated:Connect(function() self:SetDrawer(not self.DrawerOpen) end)
+end
+
+function Window:SetDrawer(open)
+    self.DrawerOpen = self.MobileDrawer and open == true
+    self.Sidebar.Visible = not self.Minimized and (not self.MobileDrawer or self.DrawerOpen)
+    self.DrawerShade.Visible = self.MobileDrawer and self.DrawerOpen and not self.Minimized
+    if self.DrawerOpen then
+        self.Sidebar.Position = State.ReduceMotion and UDim2.fromOffset(0, Config.Window.Topbar)
+            or UDim2.fromOffset(-20, Config.Window.Topbar)
+        Anim.Tween(self.Sidebar, { Position = UDim2.fromOffset(0, Config.Window.Topbar) }, 0.16)
+    end
+end
+
+function Window:ApplyAccent()
+    local token = self.ActiveTab and self.ActiveTab.ColorToken or "Accent"
+    for instance, map in pairs(Theme.Bound) do
+        if instance:IsDescendantOf(self.Main) then
+            for property, original in pairs(map) do
+                if original == "Accent" or original == "ActiveAccent" then
+                    map[property] = "ActiveAccent"
+                    instance[property] = Theme.Colors[token]
+                end
+            end
+        end
+    end
+    Theme.Colors.ActiveAccent = Theme.Colors[token]
+end
+
 function Window:BuildGround()
     local height, radius = Config.Window.Ground, Config.Window.Radius
     local ground = Draw.Box("Frame", { Name = "Ground", AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, height), ClipsDescendants = true, ZIndex = 3, Parent = self.Body }, "Brick", nil, radius)
@@ -3563,7 +3820,7 @@ function Window:BuildGround()
         Draw.Box("Frame", { Position = UDim2.fromOffset(12 + (index - 1) * 10, 10),
             Size = UDim2.fromOffset(6, 6), Parent = ground }, Config.TitleColors[index])
     end
-    Draw.Text({ Text = "PIXEL PLAYGROUND  /  v" .. Library.Version, Position = UDim2.fromOffset(60, 4),
+    Draw.Text({ Text = "TARA ARCADE  /  v" .. Library.Version, Position = UDim2.fromOffset(60, 4),
         Size = UDim2.new(1, -100, 1, -6), TextTruncate = Enum.TextTruncate.AtEnd, Parent = ground },
         "Desc", 11, "SubText")
     self.Ground = ground
@@ -3581,6 +3838,7 @@ end
 
 -- ขยายจากมุมขวาล่าง: root ยึดกึ่งกลางด้านบน จึงต้องเลื่อนตามครึ่งหนึ่งของความกว้างที่เพิ่ม เพื่อให้ขอบซ้ายอยู่กับที่
 function Window:ResizeFrom(begin, delta)
+    Popup.Close()
     if self.Minimized then
         return
     end
@@ -3617,32 +3875,41 @@ function Window:ApplyLayout()
     local width, height = self.Size.X, self.Size.Y
     local shadow = Config.Window.Shadow
     self.Compact = width < Config.Window.CompactBreakpoint
-    local sidebar = self.Compact and Config.Window.SidebarCompact or Config.Window.Sidebar
+    self.MobileDrawer = State.Touch or width < 460
+    local sidebar = self.MobileDrawer and 0 or (self.Compact and Config.Window.SidebarCompact or Config.Window.Sidebar)
     local bodyHeight = height - Config.Window.Topbar - Config.Window.Ground
-    self.Root.Size = UDim2.fromOffset(width + shadow, (self.Minimized and Config.Window.Topbar or height) + shadow)
+    self.Root.Size = UDim2.fromOffset(width + shadow, (self.Minimized and (Config.Window.Topbar + 44) or height) + shadow)
     if not self.Placed then
         -- ยึดขอบบนไว้ ตอนยุบหน้าต่างแถบจะอยู่ที่เดิม
         self.Placed = true
         self.Root.Position = UDim2.new(0.5, 0, 0.5, -math.floor((height + shadow) * State.UserScale / 2))
     end
     self.UserScale.Scale = State.UserScale
-    self.Sidebar.Size = UDim2.fromOffset(sidebar, bodyHeight)
+    local sidebarWidth = self.MobileDrawer and math.min(220, width - 40) or sidebar
+    self.Sidebar.Size = UDim2.fromOffset(sidebarWidth, bodyHeight)
+    self.Sidebar.ZIndex = self.MobileDrawer and 8 or 1
+    self.Sidebar.Visible = not self.Minimized and (not self.MobileDrawer or self.DrawerOpen == true)
+    self.DrawerButton.Visible = self.MobileDrawer and not self.Minimized
+    self.DrawerShade.Visible = self.MobileDrawer and self.DrawerOpen == true and not self.Minimized
+    self.DrawerShade.Size = UDim2.fromOffset(width, bodyHeight)
+    self.MiniBar.Size = UDim2.fromOffset(width, 44)
     self.Main.Position = UDim2.fromOffset(sidebar, Config.Window.Topbar)
     self.Main.Size = UDim2.fromOffset(width - sidebar, bodyHeight)
-    self.TabList:SetWidth(sidebar - 8 - 3)
+    self.TabList:SetWidth(sidebarWidth - 8 - 3)
     local pageWidth = width - sidebar
     for _, tab in ipairs(self.Tabs) do
         tab.PendingWidth = pageWidth
-        tab:ApplyCompact(self.Compact)
+        tab:ApplyCompact(self.Compact and not self.MobileDrawer)
     end
     if self.ActiveTab then
         self.ActiveTab:ApplyWidth()
     end
     for _, section in ipairs(self.Sections or {}) do
-        section.Hidden = self.Compact
+        section.Hidden = self.Compact and not self.MobileDrawer
     end
     self.TabList:MarkDirty()
     self:ApplyChrome(width, height)
+    self:ApplyAccent()
 end
 
 -- จอเตี้ย (มือถือแนวนอน): ซ่อนการ์ดผู้เล่นกับคำอธิบายหัวแท็บ เพื่อคืนพื้นที่ให้เนื้อหา
@@ -3663,15 +3930,31 @@ function Window:ApplyChrome(width, height)
     local narrow = width < 460
     self.SubtitlePill.Visible = self.SubTitle ~= "" and width >= 700
     self:RenderDecor()
-    self.Emblem.Visible = width >= 380
-    self.TitleHolder.Visible = width >= 340
+    self.Emblem.Visible = true
+    self.TitleHolder.Visible = width >= (self.MobileDrawer and 480 or 340)
     local searchWidth = self.Compact and (narrow and 110 or 140) or 200
     self.SearchField.Size = UDim2.fromOffset(searchWidth, Util.Metric("Box"))
     self.HeaderTitle.Size = UDim2.new(1, -(searchWidth + 44), 0, 26)
     self.HeaderDesc.Size = UDim2.new(1, -(searchWidth + 44), 0, 16)
     self.UserName.Visible = not self.Compact
     self.UserTag.Visible = not self.Compact
-    self.Avatar.Position = UDim2.new(0, self.Compact and 10 or 12, 0.5, 0)
+    self.Avatar.Position = UDim2.new(0, self.Compact and not self.MobileDrawer and 10 or 12, 0.5, 0)
+    if self.MobileDrawer then
+        local header = height < 430 and 100 or 108
+        self.HeaderTitle.Position = UDim2.fromOffset(64, 8)
+        self.HeaderTitle.Size = UDim2.new(1, -76, 0, 24)
+        self.HeaderDesc.Position = UDim2.fromOffset(64, 32)
+        self.HeaderDesc.Size = UDim2.new(1, -76, 0, 16)
+        self.SearchField.AnchorPoint = Vector2.new(0, 0)
+        self.SearchField.Position = UDim2.fromOffset(12, height < 430 and 56 or 64)
+        self.SearchField.Size = UDim2.new(1, -24, 0, Util.Metric("Box"))
+        self.PageHost.Position = UDim2.fromOffset(0, header)
+        self.PageHost.Size = UDim2.new(1, 0, 1, -header)
+        self.UserName.Visible, self.UserTag.Visible = true, true
+    else
+        self.SearchField.AnchorPoint = Vector2.new(1, 0.5)
+        self.HeaderDesc.Position = UDim2.fromOffset(16, 36)
+    end
 end
 
 function Window:AddTabSection(text)
@@ -3710,6 +3993,7 @@ function Window:SelectTab(tab)
     Popup.Close()
     local previous = self.ActiveTab
     self.ActiveTab = tab
+    self:SetDrawer(false)
     if previous then
         previous.Page.Visible = false
         previous:RenderButton()
@@ -3725,9 +4009,12 @@ function Window:SelectTab(tab)
     Lang.Bind(self.HeaderTitle, tab.Name)
     Lang.Bind(self.HeaderDesc, tab.Description or "")
     local titleY = self.HeaderDesc.Visible and 10 or 11
-    self.HeaderTitle.Position = UDim2.fromOffset(28, titleY)
-    Anim.Tween(self.HeaderTitle, { Position = UDim2.fromOffset(16, titleY) }, Config.Tween.Slide, "Back")
+    local titleX = self.MobileDrawer and 64 or 16
+    if self.MobileDrawer then titleY = 8 end
+    self.HeaderTitle.Position = UDim2.fromOffset(State.ReduceMotion and titleX or titleX + 12, titleY)
+    Anim.Tween(self.HeaderTitle, { Position = UDim2.fromOffset(titleX, titleY) }, Config.Tween.Slide, "Back")
     self:ApplyFilter()
+    self:ApplyAccent()
 end
 
 function Window:ApplyFilter()
@@ -3788,7 +4075,10 @@ function Window:Toggle()
 end
 
 function Window:SetContentVisible(visible)
-    self.Sidebar.Visible, self.Main.Visible, self.Ground.Visible = visible, visible, visible
+    self.Sidebar.Visible = visible and (not self.MobileDrawer or self.DrawerOpen == true)
+    self.Main.Visible, self.Ground.Visible = visible, visible
+    self.DrawerShade.Visible = visible and self.MobileDrawer and self.DrawerOpen == true
+    self.DrawerButton.Visible = visible and self.MobileDrawer
 end
 
 -- พับแบบม้วนเก็บ: Body ตัดขอบเนื้อหาตามความสูงที่ tween อยู่ พื้นอิฐเลื่อนขึ้นไปสอดใต้แถบหัว
@@ -3807,7 +4097,9 @@ function Window:SetMinimized(minimized)
     end
     Anim.Tween(self.ExpandBar, { Size = UDim2.new(0, 3, minimized and 0.5 or 0, 0) }, Config.Tween.Normal, "Back")
     local shadow = Config.Window.Shadow
-    local height = minimized and Config.Window.Topbar or self.Size.Y
+    local height = minimized and (Config.Window.Topbar + 44) or self.Size.Y
+    self.MiniBar.Visible = minimized
+    if minimized then self:SetDrawer(false) end
     local tween = Anim.Tween(self.Root, { Size = UDim2.fromOffset(self.Size.X + shadow, height + shadow) }, 0.34, "Out")
     tween.Completed:Once(function()
         if self.Minimized ~= minimized then
@@ -3841,9 +4133,9 @@ function Tab:BuildButton()
     local face = Draw.Box("Frame", { Size = UDim2.new(1, 0, 1, -3), BackgroundTransparency = 1, Parent = holder }, "TabActive", nil, 10)
     local stroke = Draw.Stroke(face, "Outline", 2, true)
     stroke.Transparency = 1
-    self.IconSlot = Draw.New("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 8, 0.5, 0), Size = UDim2.fromOffset(24, 24), Parent = face })
-    Sprite.New(self.IconSlot, self.Icon, 24)
-    self.Label = Draw.Text({ Position = UDim2.fromOffset(40, 0), Size = UDim2.new(1, -44, 1, 0), TextTruncate = Enum.TextTruncate.AtEnd, Parent = face }, "Body", Util.TextSize("Label") + 1, "SidebarText", self.Name)
+    self.IconSlot = Draw.New("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 8, 0.5, 0), Size = UDim2.fromOffset(32, 32), Parent = face })
+    Sprite.New(self.IconSlot, self.Icon, 32)
+    self.Label = Draw.Text({ Position = UDim2.fromOffset(48, 0), Size = UDim2.new(1, -52, 1, 0), TextTruncate = Enum.TextTruncate.AtEnd, Parent = face }, "Body", Util.TextSize("Label") + 1, "SidebarText", self.Name)
     self.Button, self.Face, self.Shade, self.Stroke = holder, face, shade, stroke
     holder.MouseEnter:Connect(function()
         self.Hovered = not State.Touch
@@ -3915,7 +4207,7 @@ end
 function Tab:ApplyColumns(pageWidth)
     self.PageWidth = pageWidth or self.PageWidth or 0
     local hasLeft, hasRight = #self.Left.Items > 0, #self.Right.Items > 0
-    local single = self.PageWidth < Config.Window.TwoColumnMin or not hasLeft or not hasRight
+    local single = State.Touch or self.PageWidth < Config.Window.TwoColumnMin or not hasLeft or not hasRight
     self.LeftItem.Hidden = not hasLeft
     self.RightItem.Hidden = not hasRight
     self.LeftItem.Width = (not single) and 0.5 or nil
@@ -3969,10 +4261,10 @@ function Groupbox:BuildHeader(card, info)
     Draw.Box("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, 2), ZIndex = 2, Parent = bar }, "Outline")
     local offset = 12
     if info.Icon then
-        local icon = Sprite.New(bar, info.Icon, 24)
+        local icon = Sprite.New(bar, info.Icon, 32)
         icon.AnchorPoint = Vector2.new(0, 0.5)
         icon.Position = UDim2.new(0, 10, 0.5, -1)
-        offset = 36
+        offset = 48
     end
     local badgeWidth = 0
     if info.Badge then
@@ -5629,6 +5921,7 @@ function Configs.BuildSection(group)
             or { EN = action.EN .. " failed: " .. tostring(reason), TH = action.TH .. " ไม่สำเร็จ: " .. tostring(reason) }
         Library:Notify(Lang.Strings.Configs, message, 3, ok and "Success" or "Error")
         list:SetValues(Configs.List())
+        if ok then Library:Feedback(actionKey == "Save" and "Save" or "Success") else Library:Feedback("Error") end
     end
     group:AddButton({ Text = Lang.Strings.Save, Style = "Primary", Func = function()
         Run("Save", Configs.Save)
@@ -5653,7 +5946,7 @@ end
 
 function Window:AddSettingsTab()
     local tab = self:AddTab(Lang.Strings.Settings, "gear", Lang.Strings.SettingsDesc)
-    local interface = tab:AddLeftGroupbox(Lang.Strings.Interface, "mushroom")
+    local interface = tab:AddLeftGroupbox(Lang.Strings.Interface, "settings-sliders")
     interface:AddDropdown("MarioLanguage", {
         Text = Lang.Strings.Language,
         Values = { "English", "ไทย" },
@@ -5815,9 +6108,12 @@ function Library:CreateWindow(options)
     end
     State.AnimationIntensity = ({ Low = true, Normal = true, Extra = true })[options.AnimationIntensity]
         and options.AnimationIntensity or "Extra"
-    State.ReduceMotion = options.ReduceMotion == true
+    local preference = false
+    pcall(function() preference = game:GetService("GuiService").ReducedMotionEnabled end)
+    State.ReduceMotion = options.ReduceMotion == true or (options.ReduceMotion == nil and preference == true)
     local window = Window.New(options)
     self.Window = window
+    window:SetAllOff(options.AllOff)
     Float.Build()
     Watermark.Build(options.WatermarkTitle or window.Title)
     Watermark.SetVisible(options.Watermark ~= false)
@@ -5927,6 +6223,7 @@ end
 
 function Library:SetTheme(name)
     Theme.Apply(name)
+    if self.Window then self.Window:ApplyAccent() end
     local option = self.Options.MarioTheme
     if option and option.Value ~= State.ThemeName then
         option.Value = State.ThemeName
@@ -5944,6 +6241,9 @@ function Library:Notify(info, content, duration, kind)
     end
     if self.Unloaded or not State.NotifyHost then
         return
+    end
+    if kind == "Success" or kind == "Error" or kind == "Warning" then
+        Mascot:React(kind == "Success" and "Success" or "Error")
     end
     Notify.Push(Lang.Resolve(info), content, duration, kind)
 end
@@ -6000,12 +6300,21 @@ function Library:Unload()
     table.clear(Particles.Pool)
     for _, template in pairs(Sprite.Templates) do template:Destroy() end
     table.clear(Sprite.Templates)
+    Mascot.Token = (Mascot.Token or 0) + 1
+    Mascot.Holder, Mascot.Sprite = nil, nil
     table.clear(Layout.Dirty)
     State.Drag, State.Binding, State.Popup, State.Window, State.NotifyHost = nil, nil, nil, nil, nil
     if State.Gui then
         State.Gui:Destroy()
         State.Gui = nil
     end
+end
+
+function Library:GetIcons()
+    local names = {}
+    for name in pairs(Sprite.Art) do table.insert(names, name) end
+    table.sort(names)
+    return names
 end
 
 Library.Themes = Themes.Order
