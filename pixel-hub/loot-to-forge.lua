@@ -3204,16 +3204,16 @@ local function BuildInterface()
     local function BuildTabs()
         local Window = Library.Window
         Window:AddTabSection(T("Farm", "ฟาร์ม"))
-        local MainTab = Window:AddTab(T("Main", "หลัก"), "home", T("Status, all-in-one mode and rewards", "สถานะ โหมดทำทุกอย่าง และรางวัล"))
+        local MainTab = Window:AddTab(T("Main", "หลัก"), "castle-gate", T("Status, all-in-one mode and rewards", "สถานะ โหมดทำทุกอย่าง และรางวัล"))
         local FarmTab = Window:AddTab(T("Combat & Farm", "ต่อสู้และฟาร์ม"), "sword", T("Stages, monsters, bosses and index", "ด่าน มอนสเตอร์ บอส และสมุดสะสม"))
         local ForgeTab = Window:AddTab(T("Forge", "หลอม"), "anvil", T("Forge gear from any ore", "หลอมอุปกรณ์จากแร่ไหนก็ได้"))
         local SellTab = Window:AddTab(T("Sell", "ขาย"), "coinbag", T("Sell gear by type and rarity", "ขายอุปกรณ์ตามประเภทและ rarity"))
         Window:AddTabSection(T("Progress", "ความคืบหน้า"))
-        local ProgressTab = Window:AddTab(T("Upgrade & Rebirth", "อัปเกรดและรีเบิร์ธ"), "level-up", T("Training, rebirth and upgrades", "ฝึก รีเบิร์ธ และอัปเกรด"))
+        local ProgressTab = Window:AddTab(T("Upgrade & Rebirth", "อัปเกรดและรีเบิร์ธ"), "crown", T("Training, rebirth and upgrades", "ฝึก รีเบิร์ธ และอัปเกรด"))
         local TowerTab = Window:AddTab(T("Tower", "หอคอย"), "tower", T("Tower loot and season pass", "ของจากหอคอย และซีซั่นพาส"))
-        local SpawnTab = Window:AddTab(T("Spawn Items", "เสกของ"), "bag", T("Ores, runes and enhance stones", "แร่ รูน และหินตีบวก"))
+        local SpawnTab = Window:AddTab(T("Spawn Items", "เสกของ"), "chest-open", T("Ores, runes and enhance stones", "แร่ รูน และหินตีบวก"))
         Window:AddTabSection(T("Other", "อื่นๆ"))
-        local PlayerTab = Window:AddTab(T("Player", "ผู้เล่น"), "robot-idle", T("Race, movement and survival", "เผ่า การเคลื่อนที่ และเอาตัวรอด"))
+        local PlayerTab = Window:AddTab(T("Player", "ผู้เล่น"), "compass", T("Race, movement and survival", "เผ่า การเคลื่อนที่ และเอาตัวรอด"))
 
         local sections = {
             { BuildMain, MainTab },
@@ -3251,7 +3251,7 @@ local function BuildInterface()
 
     Library:CreateWindow({
         Title = "PixeL UI",
-        Navigation = "Sidebar",
+        Navigation = "Chunky",
         IntroDuration = 7.5,
         SubTitle = "Loot To Forge · Jeaneism · 0x4.me",
         Owner = "Jeaneism",
@@ -3259,7 +3259,7 @@ local function BuildInterface()
         MenuKey = Enum.KeyCode.LeftControl,
         ConfigFolder = Config.SaveFolder,
         Language = "Auto",
-        Theme = "Workshop",
+        Theme = "Citadel",
         AnimationIntensity = "Normal",
         AllOff = AllOff,
         OnUnlocked = function()
