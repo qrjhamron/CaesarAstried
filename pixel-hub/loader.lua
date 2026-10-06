@@ -2,7 +2,7 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/qrjhamron/CaesarAstried/main/pixel-hub/pixel-hub-ui.lua"))()
 local Power
 local Window = Library:CreateWindow({
-    Title = "PixeL UI", Navigation = "Chunky", IntroDuration = 7.5, SubTitle = "Jeaneism · 0x4.me", Owner = "Jeaneism", Website = "https://0x4.me", Language = "Auto", Theme = "Citadel",
+    Title = "PixeL UI", Navigation = "Chunky", IntroDuration = 7.5, SubTitle = "Jeaneism · 0x4.me", Owner = "Jeaneism", Website = "https://0x4.me", Language = "Auto", Theme = "Studio",
     AnimationIntensity = "Lively",
     AllOff = function() if Power then Power:SetValue(false) end end,
 })
@@ -23,5 +23,5 @@ local Tile = Preview:AddStatCard({Title="Selected icon",Value="castle-gate",Icon
 Preview:AddDropdown("DemoIcon", {Text="Icon",Values=Library:GetIcons(),Default="castle-gate",NoSave=true,
     Callback=function(value) Tile:SetIcon(value);Tile:SetValue(value) end})
 local Themes = Gallery:AddRightGroupbox("Themes", "palette")
-Themes:AddDropdown("DemoTheme", {Text="Theme",Values=Library.Themes,Default="Citadel",Callback=function(value) Library:SetTheme(value) end})
+Themes:AddDropdown("DemoTheme", {Text="Theme",Values=Library.Themes,Default="Studio",Callback=function(value) Library:SetTheme(value) end})
 Window:AddSettingsTab()
