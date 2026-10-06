@@ -1,4 +1,4 @@
-# Tara UI icon catalog
+# PixeL UI icon catalog
 
 75 new 16×16 icons, plus the original 21 universal icons.
 
