@@ -86,6 +86,7 @@ Jeaneism.Config = {
     SaveFolder = "Loot To Forge",
     Website = "https://0x4.me",
     UpdateLog = {
+        { "2026-10-06", "Auto click rate control and typing pause\nSingle-worker fast loops\nRetry backoff for failed jobs\nString-ID training areas fixed\nAuto reconnect deduplicated\nRace and coin loops stop after unload" },
         { "2026-10-04", "Spawn Scrolls, Tickets & Stones\nDupe Whole Inventory\nAdd Season Coins (OP)\nFaster Tower farm\nRemoved keybinds from auto features\nMax Gear picks Exclusive gear\nSpawn Gear (OP)\nPotions (OP)\nFixed Auto World Boss\nBoss Server Hop\nAuto Sell keeps your best base gear\nMax Gear now goes to +20, much faster\nFixed freeze when loading the script\nUpdated for the new game version\nAuto Sell keeps items you locked\nSteadier Boss Server Hop" },
         { "2026-10-03", "Fixed World Boss, Auto Click & Codes\nImproved Auto Train\nAuto rune detection" },
     },
@@ -125,6 +126,7 @@ if type(body) == "string" then loadstring(body)() end]],
     GearEnhanceWorkers = 8,
     SlotEnhanceRounds = 200,
     ClickInterval = 0.16,
+    RetryBase = 0.25, RetryMax = 2,
     ForgeTargets = {
         { name = "Great Weapon", forgeType = "Weapon", ores = 13 },
         { name = "Katana", forgeType = "Weapon", ores = 4 },
@@ -221,6 +223,7 @@ Jeaneism.State = {
     Busy = false,
     Lock = nil,
     Failures = {},
+    WorkerLoops = {},
     Halted = {},
     InTower = false,
     Entering = false,
@@ -294,6 +297,8 @@ Jeaneism.State = {
         MissingItem = nil,
         AutoTrain = false,
         AutoClick = false,
+        ClickRate = 6,
+        ClickPauseTyping = true,
         AutoRebirth = false,
         AutoUpgrade = false,
         Upgrades = {},
@@ -597,9 +602,9 @@ end
 function Jeaneism.Util.Exclusive(name, fn, ...)
     if State.Lock then return false end
     State.Lock = name
-    local ok = Jeaneism.Util.Try(fn, ...)
+    local ok, result = Jeaneism.Util.Try(fn, ...)
     State.Lock = nil
-    return ok
+    return ok, result
 end
 
 function Jeaneism.Data.Get()
@@ -1502,26 +1507,31 @@ end
 ---@return number?    area entered, nil when none accepted or AutoTrain was toggled meanwhile
 function Jeaneism.Level.FindBestArea(gen)
     local areas = Jeaneism.GameLib.Need(GameConfig.TrainArea.Config)
-    local ids = {}
-    for areaId in pairs(areas) do
-        table.insert(ids, tonumber(areaId))
+    local ids,seen = {},{}
+    for areaId,area in pairs(areas) do
+        local id=tonumber(areaId)
+        if id and not seen[id] and type(area)=="table" then
+            seen[id]=true
+            table.insert(ids,{id=id,basic=tonumber(area.Basic) or 0})
+        end
     end
-    table.sort(ids, function(a, b) return areas[a].Basic > areas[b].Basic end)
+    table.sort(ids,function(a,b) return a.basic==b.basic and a.id>b.id or a.basic>b.basic end)
 
     local function Live()
-        return State.Opt.AutoTrain and State.TrainGen == gen
+        return State.Alive and State.Opt.AutoTrain and State.TrainGen == gen
     end
 
     local into = Jeaneism.Util.Remote("Train", "IntoAutoTrainRE")
-    for _, areaId in ipairs(ids) do
-        if not Live() then return nil end
+    for _, entry in ipairs(ids) do
+        local areaId=entry.id
+        if not Live() then State.TrainPending=nil;return nil end
         State.TrainPending = areaId
         into:FireServer(areaId)
         local deadline = os.clock() + Config.TrainAcceptWait
-        while Live() and os.clock() < deadline and LocalPlayer:GetAttribute("AutoTrainAreaID") ~= areaId do
+        while Live() and os.clock() < deadline and tonumber(LocalPlayer:GetAttribute("AutoTrainAreaID")) ~= areaId do
             task.wait(0.1)
         end
-        if LocalPlayer:GetAttribute("AutoTrainAreaID") == areaId then
+        if Live() and tonumber(LocalPlayer:GetAttribute("AutoTrainAreaID")) == areaId then
             State.TrainPending = nil
             return areaId
         end
@@ -1639,15 +1649,21 @@ function Jeaneism.Level.ClickOnce()
     Jeaneism.GameLib.Api(ReplicatedStorage.CTRL.TrainCTRL).TrainOnce()
 end
 
+function Jeaneism.Level.CanClick()
+    if not State.Alive or not State.Opt.AutoClick then return false end
+    local hum=Jeaneism.Movement.Humanoid()
+    if not hum or hum.Health<=0 then return false end
+    if State.Opt.ClickPauseTyping then
+        local ok,focused=pcall(UserInputService.GetFocusedTextBox,UserInputService)
+        if ok and focused then return false end
+    end
+    return true
+end
+
 function Jeaneism.Level.StartClicking()
-    if State.ClickLoop then return end
-    State.ClickLoop = task.defer(function()
-        while State.Alive and State.Opt.AutoClick do
-            Jeaneism.Scheduler.Run("AutoClick", Jeaneism.Level.ClickOnce)
-            task.wait(Config.ClickInterval)
-        end
-        State.ClickLoop = nil
-    end)
+    Jeaneism.Scheduler.StartLoop("AutoClick",function()
+        if Jeaneism.Level.CanClick() then Jeaneism.Level.ClickOnce() end
+    end,function() return 1/math.clamp(tonumber(State.Opt.ClickRate) or 6,1,10) end)
 end
 
 function Jeaneism.Upgrade.Names()
@@ -1713,7 +1729,7 @@ function Jeaneism.Tower.FarmCoins(target)
     local start = (Jeaneism.Season.Current() or {}).SeasonCoin or 0
     local deadline = os.clock() + Config.CoinFarmTimeout
     local gained = 0
-    while gained < target and os.clock() < deadline do
+    while State.Alive and gained < target and os.clock() < deadline do
         if not State.InTower and Jeaneism.Data.Count(Jeaneism.Data.Get(), "Dungeon_Ticket") < 1 then break end
         if not Jeaneism.Tower.FarmStep() then break end
         gained = ((Jeaneism.Season.Current() or {}).SeasonCoin or 0) - start
@@ -1934,9 +1950,11 @@ function Jeaneism.SuperLoot.Bind()
 end
 
 function Jeaneism.Combat.KillAll()
+    local folder=workspace:FindFirstChild("EnemyFolder")
+    if not folder then return false end
     local hit = Jeaneism.GameLib.Api(ReplicatedStorage.Utils.CommunicationUtils).TryGetBindableEvent("Attack", "EnemyHitBE")
     local hitInfo = { SkillID = "K_ATK_1", IsCrit = true, Damage = Config.KillDamage }
-    for _, enemy in ipairs(workspace.EnemyFolder:GetChildren()) do
+    for _, enemy in ipairs(folder:GetChildren()) do
         local enemyId = enemy:GetAttribute("EnemyID")
         if enemyId and not enemyId:find("^Super") then
             hit:Fire(enemy.Name, Config.KillDamage, hitInfo)
@@ -1945,14 +1963,7 @@ function Jeaneism.Combat.KillAll()
 end
 
 function Jeaneism.Combat.Start()
-    if State.AuraLoop then return end
-    State.AuraLoop = task.defer(function()
-        while State.Alive and State.Opt.KillAura do
-            Jeaneism.Scheduler.Run("KillAura", Jeaneism.Combat.KillAll)
-            task.wait(Config.KillAuraInterval)
-        end
-        State.AuraLoop = nil
-    end)
+    Jeaneism.Scheduler.StartLoop("KillAura",Jeaneism.Combat.KillAll,function() return Config.KillAuraInterval end)
 end
 
 ---@return boolean  false when the game's damage function can't be reached
@@ -2041,8 +2052,9 @@ function Jeaneism.Race.EquipBest()
 end
 
 function Jeaneism.Race.RollUntil(targetId)
+    if not targetId then return "target" end
     local roll = Jeaneism.Util.Remote("Class", "LuckOnceRE")
-    while State.Opt.AutoRace do
+    while State.Alive and State.Opt.AutoRace do
         local classData = Jeaneism.Data.Get().Class
         if classData.have[classData.equiped] == targetId then return "got" end
         if (classData.luckTimes or 0) <= 0 then return "empty" end
@@ -2221,10 +2233,16 @@ function Jeaneism.Session.Bind()
         VirtualUser:CaptureController()
         VirtualUser:ClickButton2(Vector2.new())
     end))
-    table.insert(State.Conns, GuiService.ErrorMessageChanged:Connect(function(msg)
-        if State.Opt.AutoRejoin and msg ~= "" then
-            task.delay(Config.RejoinDelay, Jeaneism.Session.Rejoin)
-        end
+    table.insert(State.Conns,GuiService.ErrorMessageChanged:Connect(function(msg)
+        State.LastErrorText=msg
+        if not State.Opt.AutoRejoin or msg=="" or State.RejoinQueued then return end
+        State.RejoinQueued=true
+        task.delay(Config.RejoinDelay,function()
+            State.RejoinQueued=false
+            if State.Alive and State.Opt.AutoRejoin and State.LastErrorText~="" then
+                Jeaneism.Util.Try(Jeaneism.Session.Rejoin)
+            end
+        end)
     end))
 end
 
@@ -2243,33 +2261,55 @@ Jeaneism.Scheduler.Jobs = {
     { key = "AutoClaim", every = Config.ClaimInterval, run = function() Jeaneism.Claim.All() end },
     { key = "AutoSeason", every = Config.SeasonInterval, run = function() Jeaneism.Season.Step() end },
     { key = "AutoBestRace", every = 10, run = function() Jeaneism.Race.EquipBest() end },
-    { key = "AutoIndex", every = Config.IndexInterval, run = function() Jeaneism.Util.Exclusive("Index", Jeaneism.Index.HuntAll) end },
+    { key = "AutoIndex", every = Config.IndexInterval, run = function()
+        local ok, err = Jeaneism.Util.Exclusive("Index", Jeaneism.Index.HuntAll)
+        if not ok and err ~= nil then error(err, 0) end
+    end },
 }
 
 ---Runs one round of a feature; one that keeps failing for Config.FailWindow seconds is switched off and queued for the UI to report.
 ---@param key string  State.Opt flag of the feature
-function Jeaneism.Scheduler.Run(key, fn)
-    local ok, err = pcall(fn)
-    local failures = State.Failures
-    if ok then
-        failures[key] = nil
-        return
-    end
-
-    local streak = failures[key]
+function Jeaneism.Scheduler.Run(key,fn)
+    if not State.Alive or not State.Opt[key] then return false end
+    local failures=State.Failures
+    local streak=failures[key]
+    local now=os.clock()
+    if streak and now<(streak.nextTry or 0) then return false end
+    local ok,result=pcall(fn)
+    if ok then failures[key]=nil;return true,result end
+    now=os.clock()
     if not streak then
-        streak = { count = 0, since = os.clock() }
-        failures[key] = streak
-        Jeaneism.Util.WarnJob(key, err)
+        streak={count=0,since=now}
+        failures[key]=streak
+        Jeaneism.Util.WarnJob(key,result)
     end
-    streak.count += 1
-    if streak.count < Config.MaxFailures or os.clock() - streak.since < Config.FailWindow then return end
+    streak.count+=1
+    streak.nextTry=now+math.min(Config.RetryMax,Config.RetryBase*2^math.min(streak.count-1,8))
+    if streak.count>=Config.MaxFailures and now-streak.since>=Config.FailWindow then
+        failures[key]=nil
+        State.Opt[key]=false
+        local reason=tostring(result):match("[^\n]*")
+        warn("[LootToForge]",key,"stopped:",reason)
+        table.insert(State.Halted,{key,reason})
+    end
+    return false,result
+end
 
-    failures[key] = nil
-    State.Opt[key] = false
-    local reason = tostring(err):match("[^\n]*")
-    warn("[LootToForge]", key, "stopped:", reason)
-    table.insert(State.Halted, { key, reason })
+-- One persistent worker per fast feature, including rapid off/on toggles.
+function Jeaneism.Scheduler.StartLoop(key,fn,interval)
+    if State.WorkerLoops[key] then return end
+    State.WorkerLoops[key]=true
+    task.spawn(function()
+        local ok,err=pcall(function()
+            while State.Alive do
+                if State.Opt[key] then Jeaneism.Scheduler.Run(key,fn) end
+                local delay=State.Opt[key] and interval() or 0.1
+                task.wait(math.max(0.05,tonumber(delay) or 0.1))
+            end
+        end)
+        State.WorkerLoops[key]=nil
+        if not ok then Jeaneism.Util.WarnJob(key,err) end
+    end)
 end
 
 function Jeaneism.Scheduler.Step()
@@ -2624,6 +2664,7 @@ local function BuildInterface()
             Default = opt[key],
             Callback = function(value)
                 opt[key] = value
+                State.Failures[key] = nil
                 if onChange then
                     onChange(value)
                 end
@@ -2643,6 +2684,7 @@ local function BuildInterface()
             Default = opt[key],
             Callback = function(value)
                 opt[key] = value
+                State.Failures[key] = nil
             end,
         })
     end
@@ -2676,6 +2718,7 @@ local function BuildInterface()
             NoSave = noSave,
             Callback = function(value)
                 opt[key] = value
+                State.Failures[key] = nil
             end,
         })
     end
@@ -2910,10 +2953,12 @@ local function BuildInterface()
         Feature(trainBox, "AutoTrain", T("Auto Train", "ฝึกอัตโนมัติ"), T("Trains at the best area nonstop and drinks your potions", "ฝึกโซนดีสุดไม่หยุด ใช้ยาให้เอง"), function(value)
             task.spawn(Jeaneism.Util.Try, Jeaneism.Level.SetTraining, value)
         end)
-        local autoClick = Feature(trainBox, "AutoClick", T("Auto Click", "คลิกอัตโนมัติ"), T("Clicks to train as fast as the game allows", "คลิกฝึกเร็วสุดเท่าที่เกมยอม"), function(value)
+        local autoClick = Feature(trainBox, "AutoClick", T("Auto Click", "คลิกอัตโนมัติ"), Library:T("Steady training clicks; pauses while typing or respawning", "คลิกฝึกสม่ำเสมอ หยุดตอนพิมพ์หรือเกิดใหม่", "Klik latihan stabil; jeda saat mengetik atau respawn"), function(value)
             if value then Jeaneism.Level.StartClicking() end
         end)
         NeedModule(autoClick, ReplicatedStorage.CTRL.TrainCTRL)
+        trainBox:AddSlider("ClickRate",{Text=Library:T("Clicks per second","คลิกต่อวินาที","Klik per detik"),Min=1,Max=10,Default=opt.ClickRate,Rounding=0,Callback=function(value) opt.ClickRate=value end})
+        trainBox:AddToggle("ClickPauseTyping",{Text=Library:T("Pause while typing","หยุดขณะพิมพ์","Jeda saat mengetik"),Default=opt.ClickPauseTyping,Callback=function(value) opt.ClickPauseTyping=value end})
         Feature(trainBox, "AutoRebirth", T("Auto Rebirth", "รีเบิร์ธอัตโนมัติ"), T("Rebirths as soon as your level is high enough", "รีเบิร์ธทันทีเมื่อเลเวลถึง"))
         trainBox:AddButton({ Text = T("Rebirth Now", "รีเบิร์ธเดี๋ยวนี้"), Func = Action(Jeaneism.Level.Rebirth) })
 
@@ -3082,6 +3127,8 @@ local function BuildInterface()
                     Notify("Got the race!", "Success")
                 elseif ok and outcome == "empty" then
                     Notify("No race rolls left", "Warning")
+                elseif ok and outcome == "target" then
+                    Notify("Pick a race first", "Warning")
                 end
                 Later(TurnOff, "AutoRace")
             end)
