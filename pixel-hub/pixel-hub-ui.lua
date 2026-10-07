@@ -45,7 +45,7 @@ local Config = {
     Window = {
         Width = 760, Height = 520, MinWidth = 480, MinHeight = 320,
         TouchMinWidth = 320, TouchMinHeight = 260,
-        Topbar = 52, Sidebar = 172, SidebarCompact = 56, Header = 58, Ground = 22, UserCard = 50,
+        Topbar = 80, Sidebar = 172, SidebarCompact = 56, Header = 58, Ground = 22, UserCard = 50,
         CompactBreakpoint = 600, TwoColumnMin = 520, Margin = 24, TouchMargin = 10,
         Radius = 8, Stroke = 1, Shadow = 4,
     },
@@ -291,6 +291,7 @@ local State = {
     ThemeName = "Kingdom",
     Language = "EN",
     UserScale = 0.8,
+    CompactMode = true,
     Touch = false,
     KeyPickers = {},
     Connections = {},
@@ -384,7 +385,9 @@ function Util.Every(interval, callback)
 end
 
 function Util.Metric(name)
-    return Config.Metrics[State.Touch and "Touch" or "Desktop"][name]
+    local value = Config.Metrics[State.Touch and "Touch" or "Desktop"][name]
+    if State.CompactMode and not State.Touch and type(value)=="number" then return math.max(8,value-4) end
+    return value
 end
 
 function Util.TextSize(kind)
@@ -1652,6 +1655,7 @@ end
 -- ความกว้าง item: nil = เต็มที่เหลือ, 0<w<=1 = สัดส่วน, w>1 = px, w<0 = ที่เหลือลบ px (เหมือน ImGui)
 function Container.New(host, options)
     options = options or {}
+    local regularGap = options.GapY or Config.Gap.Y
     local self = setmetatable({
         Host = host,
         Items = {},
@@ -1660,7 +1664,8 @@ function Container.New(host, options)
         PadX = options.PadX or 0,
         PadY = options.PadY or 0,
         GapX = options.GapX or Config.Gap.X,
-        GapY = options.GapY or Config.Gap.Y,
+        RegularGap = regularGap,
+        GapY = State.CompactMode and math.max(4,regularGap-4) or regularGap,
         Width = 0,
         ContentHeight = 0,
         Scroll = host:IsA("ScrollingFrame"),
@@ -1711,6 +1716,7 @@ function Container:Add(frame, spec)
         AutoWidth = spec.AutoWidth,
         Fill = spec.Fill,
         Search = spec.Search,
+        SearchLabel = spec.SearchLabel,
         Hidden = false,
         Filtered = false,
     }
@@ -2068,6 +2074,7 @@ function Row.New(container, info, options)
             row:Arrange(width, height)
         end,
         Search = Row.SearchText(info),
+        SearchLabel = info.Text or info.Title,
     })
     return row
 end
@@ -2076,6 +2083,12 @@ function Row.BindHover(button, hover)
     if State.Touch then
         return
     end
+    button.MouseButton1Down:Connect(function()
+        if State.ThemeName=="Kingdom" then Anim.Tween(hover,{BackgroundTransparency=0.22},0.06,"Out") end
+    end)
+    button.MouseButton1Up:Connect(function()
+        if State.ThemeName=="Kingdom" then Anim.Tween(hover,{BackgroundTransparency=0.65},0.12,"Out") end
+    end)
     button.MouseEnter:Connect(function()
         Anim.Tween(hover, { BackgroundTransparency = 0.45 }, Config.Tween.Fast)
     end)
@@ -2149,6 +2162,7 @@ function Row.Stack(container, info, controlHeight)
             stack:ArrangeStack(width)
         end,
         Search = Row.SearchText(info),
+        SearchLabel = info.Text or info.Title,
     })
     return stack
 end
@@ -2189,7 +2203,7 @@ function Container:AddToggle(idx, info)
     end
     toggle.Row.Hit.Activated:Connect(function()
         toggle:SetValue(not toggle.Value)
-        if toggle.Value then
+        if toggle.Value and State.ThemeName~="Kingdom" then
             Anim.CoinPop(toggle.Row.Holder, UDim2.new(1, -toggle.Track.Size.X.Offset / 2, 0, 6), 18)
         end
     end)
@@ -2254,7 +2268,7 @@ function Toggle:SetValue(value)
     end
     self.Value = value
     self:Render(false)
-    if value then Anim.Burst(self.Track, UDim2.fromScale(0.5, 0.5), "Good") end
+    if value and State.ThemeName~="Kingdom" then Anim.Burst(self.Track, UDim2.fromScale(0.5, 0.5), "Good") end
     self:Fire()
 end
 
@@ -2688,6 +2702,7 @@ function Button.Create(container, info, callback, after)
         Height = Util.Metric("Box") + depth,
         After = after,
         Search = Lang.SearchText(info.Text),
+        SearchLabel = info.Text,
         AutoWidth = function()
             return Layout.Measure(button.Label.Text, button.Label.TextSize, "Body", 1000).X + 36
         end,
@@ -3767,6 +3782,7 @@ function Window.New(options)
     self:BuildGround()
     self:BuildMiniBar()
     self:BuildDrawer()
+    self:BuildUtilityPanels()
     self:FitViewport()
     Util.Connect(State.Gui:GetPropertyChangedSignal("AbsoluteSize"), function()
         self:FitViewport()
@@ -3794,15 +3810,17 @@ end
 function Window:BuildTopbar()
     local height, radius = Config.Window.Topbar, Config.Window.Radius
     local topbar = Draw.Box("Frame", { Name = "Topbar", Size = UDim2.new(1, 0, 0, height), ClipsDescendants = true, ZIndex = 5, Parent = self.Body }, "Topbar", nil, radius)
+    self.Topbar = topbar
     self.TopbarFill = Draw.Box("Frame", { Position = UDim2.new(0, 0, 1, -radius), Size = UDim2.new(1, 0, 0, radius), Parent = topbar }, "Topbar")
     self.TopbarLine = Draw.Box("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, 3), ZIndex = 3, Parent = topbar }, "Outline")
     self.Topbar = topbar
     self:BuildDecor(topbar)
     local controlsWidth=State.ThemeName=="Field" and (State.Touch and 184 or 176) or (State.Touch and 220 or 196)
     local left = Draw.New("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -(controlsWidth+22), 1, -3), ClipsDescendants=true, ZIndex = 4, Parent = topbar })
+    self.TopbarLeft = left
     Draw.List(left, 8, true, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
-    self.Emblem = Draw.New("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Parent = left })
-    if self.BrandIcon or State.ThemeName=="Kingdom" then Sprite.New(self.Emblem,self.BrandIcon or "crown",22) else Mascot.Build(self.Emblem) end
+    self.Emblem = Draw.New("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(18, 18), Parent = left })
+    if self.BrandIcon or State.ThemeName=="Kingdom" then Sprite.New(self.Emblem,self.BrandIcon or "crown",18) else Mascot.Build(self.Emblem) end
     Util.Every(4, function()
         if self.Visible and not self.Minimized and not State.ReduceMotion and State.AnimationIntensity ~= "Low" then
             if Mascot.Sprite then Anim.Bump(Mascot.Sprite, 2) end
@@ -3811,6 +3829,8 @@ function Window:BuildTopbar()
     self:BuildTitle(left)
     self.SubtitlePill = self:BuildPill(left, self.SubTitle)
     local right = Draw.New("Frame", { BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 0), Size = UDim2.new(0, controlsWidth, 1, -3), ZIndex = 4, Parent = topbar })
+    self.TopbarRight = right
+    self.DragExclusions = {right}
     Draw.List(right, 8, true, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Center)
     self:BuildLanguagePill(right)
     local _, minimizeFace = self:BuildTopButton(right, "Minimize", "Coin", "CoinDark", "Ink", function()
@@ -3829,7 +3849,7 @@ function Window:BuildTopbar()
         end
         self.Root.Position = begin + UDim2.fromOffset(delta.X, delta.Y)
         return begin
-    end, { right })
+    end, self.DragExclusions)
 end
 
 -- ของตกแต่ง topbar ตามธีม: เมฆลอยสำหรับธีมกลางวัน ดาว/ถ่านไฟกะพริบสำหรับธีมกลางคืน
@@ -3877,6 +3897,7 @@ end
 
 function Window:BuildLanguagePill(parent)
     local pill = Draw.Box("Frame", { Size = UDim2.fromOffset(State.ThemeName=="Field" and 96 or (State.Touch and 120 or 104),State.ThemeName=="Field" and 36 or (State.Touch and 40 or 32)), LayoutOrder = 1, Parent = parent }, "Shadow", "Outline", UDim.new(1, 0), 2)
+    self.LanguagePill = pill
     pill.BackgroundTransparency = 0.35
     local segments = {}
     for index, code in ipairs(Lang.Codes) do
@@ -3984,17 +4005,23 @@ function Window:BuildMain()
     self.Main = main
     self.HeaderTitle = Draw.Text({ Position = UDim2.fromOffset(16, 10), Size = UDim2.new(1, -230, 0, 26), TextTruncate = Enum.TextTruncate.AtEnd, Parent = main }, "Display", Config.Text.Header, "Text")
     self.HeaderDesc = Draw.Text({ Position = UDim2.fromOffset(16, 36), Size = UDim2.new(1, -230, 0, 16), TextTruncate = Enum.TextTruncate.AtEnd, Parent = main }, "Desc", Util.TextSize("Desc") + 1, "SubText")
-    local field = Draw.Box("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -16, 0, header / 2), Size = UDim2.fromOffset(200, Util.Metric("Box")), Parent = main }, "Element", "Outline", UDim.new(1, 0), 2)
+    local field = Draw.Box("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -16, 0, header / 2), Size = UDim2.fromOffset(200, 28), Parent = self.Topbar }, "Element", "Outline", UDim.new(1, 0), 2)
     local icon = Sprite.New(field, "boo", 12)
     icon.AnchorPoint = Vector2.new(0, 0.5)
     icon.Position = UDim2.new(0, 10, 0.5, 0)
     self.Search = Draw.Text({ ClassName = "TextBox", Text = "", ClearTextOnFocus = false, Position = UDim2.fromOffset(28, 0), Size = UDim2.new(1, -36, 1, 0), Parent = field }, "Body", Util.TextSize("Label"), "Text")
-    Lang.Bind(self.Search, Lang.Strings.Search, "PlaceholderText")
+    Lang.Bind(self.Search, {EN="Search all controls…",ID="Cari semua kontrol…",TH="ค้นหาการตั้งค่าทั้งหมด…"}, "PlaceholderText")
     Theme.Bind(self.Search, { PlaceholderColor3 = "Muted" })
     self.SearchField = field
+    field.Name = "GlobalSearch"
+    table.insert(self.DragExclusions,field)
     self.Search:GetPropertyChangedSignal("Text"):Connect(function()
-        self.Query = self.Search.Text:lower()
+        self.Query = self.Search.Text:lower():match("^%s*(.-)%s*$")
         self:ApplyFilter()
+    end)
+    self.Search.Focused:Connect(function()self:RenderSearchResults()end)
+    self.Search.FocusLost:Connect(function(enter)
+        if enter and self.SearchResults and self.SearchResults[1] then self:FocusSearchResult(self.SearchResults[1]) end
     end)
     self.PageHost = Draw.New("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(0, header), Size = UDim2.new(1, 0, 1, -header), ClipsDescendants = true, ZIndex = 2, Parent = main })
     Particles.Build(main)
@@ -4006,8 +4033,8 @@ function Window:BuildMiniBar()
     self.MiniBar = bar
     self.MiniStatus = Draw.Text({ Text = "• Off / Idle", Position = UDim2.fromOffset(10, 2),
         Size = UDim2.new(1, -110, 1, -4), TextTruncate = Enum.TextTruncate.AtEnd, Parent = bar }, "Strong", 13, "Muted")
-    local off = Draw.Box("TextButton", { Position = UDim2.new(1, -94, 0, 6),
-        Size = UDim2.fromOffset(84, 32), Parent = bar }, "Danger", "Outline", 0, 2)
+    local off = Draw.Box("TextButton", { Position = UDim2.new(1, -80, 0, 4),
+        Size = UDim2.fromOffset(72, 24), Parent = bar }, "Danger", "Outline", 0, 2)
     Draw.Text({ Text = "ALL OFF", Size = UDim2.fromScale(1, 1), TextXAlignment = Enum.TextXAlignment.Center,
         Parent = off }, "Strong", 12, "Ink")
     off.Activated:Connect(function()
@@ -4135,14 +4162,14 @@ end
 -- One row of raised blocks; labels never collapse into an icon-only menu.
 function Window:LayoutBlockTabs()
     local available=math.max(1,self.Size.X-80)
-    local height=State.Touch and 44 or 40
-    self.NavHeight=height+16
+    local height=State.Touch and 40 or (State.CompactMode and 32 or 40)
+    self.NavHeight=height+12
     self.Sidebar.Size=UDim2.fromOffset(self.Size.X,self.NavHeight)
     self.TabScroll.Size=UDim2.fromOffset(available,height+5)
     local x=4
     for index,tab in ipairs(self.Tabs) do
         local labelWidth=Layout.Measure(Lang.Resolve(tab.Name),Fonts.Size("Body",13),"Body",300).X
-        local width=math.clamp(labelWidth+48,104,188)
+        local width=math.clamp(labelWidth+40,92,176)
         tab.Button.Position=UDim2.fromOffset(x,2)
         tab.Button.Size=UDim2.fromOffset(width,height-4)
         tab.Button.Visible=true
@@ -4187,6 +4214,7 @@ function Window:RevealBlockTab()
 end
 
 function Window:ApplyLayout()
+    if self.Minimized then self:LayoutMinimized(); return end
     local width, height = self.Size.X, self.Size.Y
     local shadow = Config.Window.Shadow
     if self.Navigation == "Chunky" then
@@ -4264,7 +4292,7 @@ function Window:ApplyShort(height)
     self.PageHost.Size = UDim2.new(1, 0, 1, -header)
 end
 
-function Window:ApplyChrome(width, height)
+function Window:ApplyPageChrome(width, height)
     if self.Navigation == "Chunky" then
         local narrow=width<600
         local short=height<430
@@ -4361,11 +4389,11 @@ function Window:SelectTab(tab)
     tab:ApplyWidth()
     tab.Page.Visible = true
     tab.Page.Position = State.ReduceMotion and UDim2.new() or UDim2.fromOffset(16, 0)
-    Anim.Tween(tab.Page, { Position = UDim2.new() }, Config.Tween.Slide)
+    Anim.Tween(tab.Page, { Position = UDim2.new() }, State.ThemeName=="Kingdom" and 0.16 or Config.Tween.Slide,"Out")
     tab:RenderButton()
     self:RevealBlockTab()
     Anim.Reveal(tab)
-    Anim.Bump(tab.IconSlot, 3)
+    Anim.Bump(tab.IconSlot, State.ThemeName=="Kingdom" and 1 or 3)
     Theme.Bind(self.HeaderTitle, { TextColor3 = State.ThemeName=="Kingdom" and "Accent" or (State.ThemeName=="Field" and "Text" or tab.ColorToken) })
     Lang.Bind(self.HeaderTitle, tab.Name)
     Lang.Bind(self.HeaderDesc, tab.Description or "")
@@ -4379,22 +4407,8 @@ function Window:SelectTab(tab)
 end
 
 function Window:ApplyFilter()
-    local tab = self.ActiveTab
-    if not tab then
-        return
-    end
-    local query = self.Query
-    for _, box in ipairs(tab.Groupboxes) do
-        local titleMatch = query == "" or box.SearchTitle:find(query, 1, true) ~= nil
-        local anyMatch = false
-        for _, item in ipairs(box.Items) do
-            item.Filtered = not titleMatch and (item.Search == nil or not item.Search:find(query, 1, true))
-            anyMatch = anyMatch or (item.Search ~= nil and not item.Filtered)
-        end
-        box.Item.Filtered = not titleMatch and not anyMatch
-        box:MarkDirty()
-        box.Column:MarkDirty()
-    end
+    if not self.SearchPanel then return end
+    self:RenderSearchResults()
 end
 
 function Window:SetVisible(visible)
@@ -4402,6 +4416,7 @@ function Window:SetVisible(visible)
         return
     end
     self.Visible = visible
+    if not visible then self:CloseUtilityPanels() end
     Particles.Resume()
     Anim.SyncLoops()
     Popup.Close()
@@ -4445,34 +4460,243 @@ end
 -- พับแบบม้วนเก็บ: Body ตัดขอบเนื้อหาตามความสูงที่ tween อยู่ พื้นอิฐเลื่อนขึ้นไปสอดใต้แถบหัว
 -- เนื้อหาถูกซ่อนจริงหลังพับเสร็จเท่านั้น (ไม่ให้ปุ่มที่มองไม่เห็นยังกดได้)
 function Window:SetMinimized(minimized)
-    if self.Minimized == minimized then
-        return
-    end
+    if self.Minimized == minimized then return end
     self.Minimized = minimized
+    Popup.Close()
+    self:CloseUtilityPanels()
+    self:SetContentVisible(not minimized)
+    self.MiniBar.Visible = minimized
+    self.LanguagePill.Visible = not minimized
+    self.SearchField.Visible = not minimized
+    self.NoticeButton.Visible = not minimized
+    self.TopbarFill.Visible, self.TopbarLine.Visible = not minimized, not minimized
+    self:ApplyLayout()
     Particles.Resume()
     Anim.SyncLoops()
-    Popup.Close()
-    if not minimized then
-        self:SetContentVisible(true)
-        self.TopbarFill.Visible, self.TopbarLine.Visible = true, true
+    Anim.Tween(self.ExpandBar,{Size=UDim2.new(0,3,minimized and 0.5 or 0,0)},0.16,"Out")
+    if not State.ReduceMotion then
+        self.PopScale.Scale = 0.98
+        Anim.Tween(self.PopScale,{Scale=1},0.16,"Out")
     end
-    Anim.Tween(self.ExpandBar, { Size = UDim2.new(0, 3, minimized and 0.5 or 0, 0) }, Config.Tween.Normal, "Back")
-    local shadow = Config.Window.Shadow
-    local height = minimized and (Config.Window.Topbar + 44) or self.Size.Y
-    self.MiniBar.Visible = minimized
-    if minimized then self:SetDrawer(false) end
-    local tween = Anim.Tween(self.Root, { Size = UDim2.fromOffset(self.Size.X + shadow, height + shadow) }, 0.34, "Out")
-    tween.Completed:Once(function()
-        if self.Minimized ~= minimized then
-            return
-        end
-        if minimized then
-            self:SetContentVisible(false)
-            self.TopbarFill.Visible, self.TopbarLine.Visible = false, false
-        else
-            Particles.Resume()
-        end
+end
+
+function Window:BuildUtilityPanels()
+    self.NoticeButton=Draw.Box("TextButton",{Name="NotificationCenterButton",Text="",AutoButtonColor=false,Parent=self.Topbar},"Element","Track",7,1)
+    Sprite.New(self.NoticeButton,"scroll",16).Position=UDim2.fromOffset(6,6)
+    self.NoticeBadge=Draw.Text({Text="",AnchorPoint=Vector2.new(1,0),Position=UDim2.new(1,3,0,-3),Size=UDim2.fromOffset(20,12),TextXAlignment=Enum.TextXAlignment.Center,Parent=self.NoticeButton},"Strong",9,"Coin")
+    Tooltip.Attach(self.NoticeButton,{EN="Notification center",ID="Pusat notifikasi",TH="ศูนย์แจ้งเตือน"})
+    table.insert(self.DragExclusions,self.NoticeButton)
+    self.NoticeButton.Activated:Connect(function()self:ToggleNoticeCenter()end)
+    local function panel(name,title)
+        local root=Draw.Box("Frame",{Name=name,Visible=false,ZIndex=Config.Layer.Overlay,ClipsDescendants=true,Parent=self.Body},"Panel","Track",8,1)
+        Draw.Text({Position=UDim2.fromOffset(12,8),Size=UDim2.new(1,-92,0,20),Parent=root},"Strong",13,"Text",title)
+        local close=Draw.Text({Text="×",ClassName="TextButton",AutoButtonColor=false,Position=UDim2.new(1,-32,0,6),Size=UDim2.fromOffset(24,24),TextXAlignment=Enum.TextXAlignment.Center,Parent=root},"Body",18,"SubText")
+        close.Activated:Connect(function()root.Visible=false end)
+        local scroll=Layout.ScrollFrame({Position=UDim2.fromOffset(8,36),Size=UDim2.new(1,-16,1,-44),Parent=root})
+        return root,scroll
+    end
+    self.SearchPanel,self.SearchList=panel("GlobalSearchResults",{EN="Search results",ID="Hasil pencarian",TH="ผลการค้นหา"})
+    self.NoticePanel,self.NoticeList=panel("NotificationCenter",{EN="Notifications",ID="Notifikasi",TH="การแจ้งเตือน"})
+    local clear=Draw.Text({ClassName="TextButton",AutoButtonColor=false,Position=UDim2.new(1,-84,0,8),Size=UDim2.fromOffset(46,20),TextXAlignment=Enum.TextXAlignment.Center,Parent=self.NoticePanel},"Body",11,"Accent",{EN="Clear",ID="Hapus",TH="ล้าง"})
+    clear.Activated:Connect(function()table.clear(Notify.History);self:UpdateNoticeBadge();self:RenderNotices()end)
+    Util.Connect(UserInputService.InputBegan,function(input)
+        if input.KeyCode==Enum.KeyCode.Escape then self:CloseUtilityPanels();return end
+        if input.UserInputType~=Enum.UserInputType.MouseButton1 and input.UserInputType~=Enum.UserInputType.Touch then return end
+        local point=Vector2.new(input.Position.X,input.Position.Y)
+        local inside=(self.SearchPanel.Visible and Util.Inside(self.SearchPanel,point)) or (self.NoticePanel.Visible and Util.Inside(self.NoticePanel,point))
+            or Util.Inside(self.SearchField,point) or Util.Inside(self.NoticeButton,point)
+        if not inside then self:CloseUtilityPanels() end
     end)
+    Lang.OnChange(self.NoticePanel,function()
+        if self.NoticePanel.Visible then self:RenderNotices()end
+        if self.SearchPanel.Visible then self:RenderSearchResults()end
+    end)
+end
+
+function Window:CloseUtilityPanels()
+    if self.SearchPanel then self.SearchPanel.Visible=false end
+    if self.NoticePanel then self.NoticePanel.Visible=false end
+end
+
+function Window:FindSearchResults(query)
+    query=tostring(query or ""):lower():match("^%s*(.-)%s*$")
+    local results,total={},0
+    if query=="" then return results,total end
+    for _,tab in ipairs(self.Tabs) do
+        local tabMatch=Lang.SearchText(tab.Name):find(query,1,true)~=nil
+        for _,box in ipairs(tab.Groupboxes) do
+            local groupMatch=(box.SearchTitle or ""):find(query,1,true)~=nil
+            for _,item in ipairs(box.Items) do
+                if not item.Hidden and item.SearchLabel and (tabMatch or groupMatch or (item.Search or ""):find(query,1,true)) then
+                    total+=1
+                    if #results<30 then table.insert(results,{Tab=tab,Box=box,Item=item,Label=item.SearchLabel})end
+                end
+            end
+        end
+    end
+    return results,total
+end
+
+function Window:RenderSearchResults()
+    local results,total=self:FindSearchResults(self.Query)
+    self.SearchResults=results
+    for _,child in ipairs(self.SearchList:GetChildren())do child:Destroy()end
+    self.SearchPanel.Visible=self.Query~="" and not self.Minimized and self.Visible
+    if not self.SearchPanel.Visible then return end
+    self.NoticePanel.Visible=false
+    local y=0
+    for _,result in ipairs(results)do
+        local row=Draw.Box("TextButton",{Text="",AutoButtonColor=false,Position=UDim2.fromOffset(0,y),Size=UDim2.new(1,-6,0,44),Parent=self.SearchList},"Element",nil,6)
+        Draw.Text({Position=UDim2.fromOffset(10,4),Size=UDim2.new(1,-20,0,18),TextTruncate=Enum.TextTruncate.AtEnd,Parent=row},"Body",13,"Text",result.Label)
+        Draw.Text({Text=Lang.Resolve(result.Tab.Name).." / "..Lang.Resolve(result.Box.Name or ""),Position=UDim2.fromOffset(10,23),Size=UDim2.new(1,-20,0,15),TextTruncate=Enum.TextTruncate.AtEnd,Parent=row},"Desc",10,"SubText")
+        row.Activated:Connect(function()self:FocusSearchResult(result)end)
+        y+=48
+    end
+    if total==0 or total>#results then
+        Draw.Text({Position=UDim2.fromOffset(10,y),Size=UDim2.new(1,-20,0,24),Parent=self.SearchList},"Desc",12,"SubText",total==0 and {EN="No matching controls",ID="Tidak ada kontrol yang cocok",TH="ไม่พบการตั้งค่า"} or {EN="Showing first 30 matches",ID="Menampilkan 30 hasil pertama",TH="แสดง 30 ผลลัพธ์แรก"})
+        y+=28
+    end
+    self.SearchList.CanvasSize=UDim2.fromOffset(0,y)
+end
+
+function Window:FocusSearchResult(result)
+    self.Query=""
+    self.Search.Text=""
+    self.Search:ReleaseFocus()
+    self:CloseUtilityPanels()
+    self:SelectTab(result.Tab)
+    result.Box.Open.Value=1
+    Anim.Tween(result.Box.Chevron,{Rotation=0},0.14,"Out")
+    result.Box.Column:MarkDirty()
+    result.Box:MarkDirty()
+    Layout.Flush()
+    local page=result.Tab.Page
+    local position=result.Item.Frame.AbsolutePosition.Y-page.AbsolutePosition.Y+page.CanvasPosition.Y-12
+    local maximum=math.max(0,page.CanvasSize.Y.Offset-page.AbsoluteSize.Y)
+    page.CanvasPosition=Vector2.new(0,math.clamp(position,0,maximum))
+    local focus=Draw.Stroke(result.Item.Frame,"Accent",1,true)
+    task.delay(0.8,function()
+        if focus.Parent then Anim.Tween(focus,{Transparency=1},0.2,"Out");task.delay(0.22,function()focus:Destroy()end)end
+    end)
+end
+
+function Window:UpdateNoticeBadge()
+    local unread=0
+    for _,entry in ipairs(Notify.History)do if not entry.Read then unread+=1 end end
+    if self.NoticeBadge then self.NoticeBadge.Text=unread>0 and tostring(unread) or "" end
+end
+
+function Window:ToggleNoticeCenter()
+    local opening=not self.NoticePanel.Visible
+    self:CloseUtilityPanels()
+    self.NoticePanel.Visible=opening and not self.Minimized
+    if opening then
+        for _,entry in ipairs(Notify.History)do entry.Read=true end
+        self:UpdateNoticeBadge()
+        self:RenderNotices()
+    end
+end
+
+function Window:RenderNotices()
+    for _,child in ipairs(self.NoticeList:GetChildren())do child:Destroy()end
+    local y=0
+    for _,entry in ipairs(Notify.History)do
+        local row=Draw.Box("Frame",{Position=UDim2.fromOffset(0,y),Size=UDim2.new(1,-6,0,66),Parent=self.NoticeList},"Element",nil,6)
+        local token=entry.Kind=="Error" and "Danger" or entry.Kind=="Success" and "Good" or entry.Kind=="Warning" and "Coin" or "Accent"
+        Draw.Box("Frame",{Position=UDim2.fromOffset(0,8),Size=UDim2.new(0,2,1,-16),Parent=row},token)
+        Draw.Text({Text=entry.Title..(entry.Count>1 and (" ×"..entry.Count) or ""),Position=UDim2.fromOffset(10,4),Size=UDim2.new(1,-20,0,18),TextTruncate=Enum.TextTruncate.AtEnd,Parent=row},"Strong",12,"Text")
+        Draw.Text({Position=UDim2.fromOffset(10,24),Size=UDim2.new(1,-20,0,34),TextWrapped=true,TextTruncate=Enum.TextTruncate.AtEnd,TextYAlignment=Enum.TextYAlignment.Top,Parent=row},"Desc",11,"SubText",entry.Content)
+        Tooltip.Attach(row,entry.Content)
+        y+=70
+    end
+    if #Notify.History==0 then
+        Draw.Text({Position=UDim2.fromOffset(10,8),Size=UDim2.new(1,-20,0,22),Parent=self.NoticeList},"Body",12,"SubText",{EN="No notifications yet",ID="Belum ada notifikasi",TH="ยังไม่มีการแจ้งเตือน"})
+        y=38
+    end
+    self.NoticeList.CanvasSize=UDim2.fromOffset(0,y)
+end
+
+Notify.History={}
+Notify.Active={}
+function Notify.Record(title,content,kind)
+    local now=os.clock()
+    local text=Lang.Resolve(content or "")
+    local newest,repeatIndex
+    for index,entry in ipairs(Notify.History) do
+        if now-entry.Time>=10 then break end
+        if entry.Title==title and Lang.Resolve(entry.Content)==text and entry.Kind==kind then
+            newest,repeatIndex=entry,index
+            break
+        end
+    end
+    local repeated = newest ~= nil
+    local center=State.Window and State.Window.NoticePanel and State.Window.NoticePanel.Visible
+    if repeated then
+        newest.Count+=1;newest.Time=now;newest.Read=center==true
+        table.remove(Notify.History,repeatIndex)
+        table.insert(Notify.History,1,newest)
+    else
+        table.insert(Notify.History,1,{Title=title,Content=content or "",Kind=kind,Time=now,Count=1,Read=center==true})
+        if #Notify.History>50 then table.remove(Notify.History)end
+    end
+    if State.Window and State.Window.UpdateNoticeBadge then
+        State.Window:UpdateNoticeBadge()
+        if center then State.Window:RenderNotices()end
+    end
+    return not repeated
+end
+
+function Window:LayoutMinimized()
+    local width=math.min(self.Size.X,360)
+    self.Root.Size=UDim2.fromOffset(width+Config.Window.Shadow,76+Config.Window.Shadow)
+    self.UserScale.Scale=State.UserScale
+    self.Topbar.Size=UDim2.fromOffset(width,44)
+    local controls=State.Touch and 88 or 76
+    self.TopbarLeft.Size=UDim2.new(1,-(controls+20),0,44)
+    self.TopbarRight.Size=UDim2.fromOffset(controls,44)
+    self.Sidebar.Visible=false
+    self.DrawerButton.Visible=false
+    self.DrawerShade.Visible=false
+    self.Main.Visible=false
+    self.Ground.Visible=false
+    self.SubtitlePill.Visible=false
+    self.TitleHolder.Visible=true
+    self.MiniBar.Position=UDim2.fromOffset(0,44)
+    self.MiniBar.Size=UDim2.fromOffset(width,32)
+end
+
+function Window:ApplyChrome(width,height)
+    self:ApplyPageChrome(width,height)
+    if not self.Topbar then return end
+    self.Topbar.Size=UDim2.fromOffset(width,Config.Window.Topbar)
+    local controls=State.Touch and 220 or 196
+    self.TopbarLeft.Size=UDim2.new(1,-(controls+26),0,44)
+    self.TopbarRight.Size=UDim2.fromOffset(controls,44)
+    self.LanguagePill.Visible=true
+    self.SearchField.Visible=true
+    self.NoticeButton.Visible=true
+    self.SearchField.AnchorPoint=Vector2.new(0,0)
+    self.SearchField.Position=UDim2.fromOffset(12,46)
+    self.SearchField.Size=UDim2.fromOffset(math.max(80,width-62),28)
+    self.NoticeButton.Position=UDim2.fromOffset(width-42,46)
+    self.NoticeButton.Size=UDim2.fromOffset(28,28)
+    self.SearchPanel.Visible=self.SearchPanel.Visible and not self.Minimized
+    self.NoticePanel.Visible=self.NoticePanel.Visible and not self.Minimized
+    local header=State.CompactMode and 36 or 56
+    self.HeaderTitle.Position=UDim2.fromOffset(14,6)
+    self.HeaderTitle.Size=UDim2.new(1,-28,0,24)
+    self.HeaderDesc.Visible=not State.CompactMode and height>=430
+    self.HeaderDesc.Position=UDim2.fromOffset(14,32)
+    self.HeaderDesc.Size=UDim2.new(1,-28,0,18)
+    if not self.HeaderDesc.Visible and not State.CompactMode then header=38 end
+    self.PageHost.Position=UDim2.fromOffset(0,header)
+    self.PageHost.Size=UDim2.new(1,0,1,-header)
+    if self.SearchPanel then
+        self.SearchPanel.Position=UDim2.fromOffset(12,Config.Window.Topbar+4)
+        self.SearchPanel.Size=UDim2.fromOffset(width-24,math.max(80,math.min(244,height-Config.Window.Topbar-10)))
+        self.NoticePanel.Position=UDim2.fromOffset(math.max(12,width-348),Config.Window.Topbar+4)
+        self.NoticePanel.Size=UDim2.fromOffset(math.min(336,width-24),math.max(80,math.min(300,height-Config.Window.Topbar-10)))
+    end
 end
 
 function Window:SetScale(scale)
@@ -4494,9 +4718,9 @@ function Tab:BuildButton()
         local face=Draw.Box("Frame",{Size=UDim2.new(1,0,1,-3),Parent=holder},"Panel",nil,5)
         local stroke=Draw.Stroke(face,"Outline",1,true)
         Draw.Box("Frame",{Position=UDim2.fromOffset(3,3),Size=UDim2.new(1,-6,0,2),BackgroundTransparency=0.65,Parent=face},"White")
-        self.IconSlot=Draw.Box("Frame",{AnchorPoint=Vector2.new(0,0.5),Position=UDim2.new(0,8,0.5,0),Size=UDim2.fromOffset(26,26),Parent=face},"Element",nil,4)
-        Sprite.New(self.IconSlot,self.Icon,20).Position=UDim2.fromOffset(3,3)
-        self.Label=Draw.Text({Position=UDim2.fromOffset(40,0),Size=UDim2.new(1,-48,1,-3),TextTruncate=Enum.TextTruncate.AtEnd,Parent=face},"Body",13,"Text",self.Name)
+        self.IconSlot=Draw.Box("Frame",{AnchorPoint=Vector2.new(0,0.5),Position=UDim2.new(0,8,0.5,0),Size=UDim2.fromOffset(22,22),Parent=face},"Element",nil,4)
+        Sprite.New(self.IconSlot,self.Icon,16).Position=UDim2.fromOffset(3,3)
+        self.Label=Draw.Text({Position=UDim2.fromOffset(36,0),Size=UDim2.new(1,-44,1,-3),TextTruncate=Enum.TextTruncate.AtEnd,Parent=face},"Body",13,"Text",self.Name)
         self.Marker=Draw.Box("Frame",{Position=UDim2.new(0,40,1,-4),Size=UDim2.new(1,-48,0,2),Visible=false,Parent=face},self.ColorToken,nil,1)
         self.Button,self.Face,self.Shade,self.Stroke=holder,face,shade,stroke
         holder.MouseEnter:Connect(function() self.Hovered=not State.Touch;self:RenderButton() end)
@@ -4622,6 +4846,7 @@ function Tab:AddGroupbox(info, side)
     local box = Container.New(body, { PadX = Config.Group.PadX, PadY = Config.Group.PadY, Window = self.Window, Tab = self })
     setmetatable(box, Groupbox)
     box.Column, box.Card, box.SearchTitle = column, card, Lang.SearchText(info.Name)
+    box.Name = info.Name
     box.Open = Draw.New("NumberValue", { Value = info.Collapsed and 0 or 1 })
     box:BuildHeader(card, info)
     box.Item = column:Add(holder, {
@@ -4654,10 +4879,10 @@ function Groupbox:BuildHeader(card, info)
     Draw.Box("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, 2), ZIndex = 2, Parent = bar }, "Outline")
     local offset = 12
     if info.Icon then
-        local icon = Sprite.New(bar, info.Icon, 24)
+        local icon = Sprite.New(bar, info.Icon, 18)
         icon.AnchorPoint = Vector2.new(0, 0.5)
         icon.Position = UDim2.new(0, 10, 0.5, -1)
-        offset = 40
+        offset = 34
     end
     local badgeWidth = 0
     if info.Badge then
@@ -4674,8 +4899,9 @@ function Groupbox:BuildHeader(card, info)
 end
 
 function Groupbox:SetCollapsed(collapsed)
-    Anim.Tween(self.Open, { Value = collapsed and 0 or 1 }, Config.Tween.Collapse)
-    Anim.Tween(self.Chevron, { Rotation = collapsed and -90 or 0 }, Config.Tween.Collapse)
+    local duration=State.ThemeName=="Kingdom" and 0.16 or Config.Tween.Collapse
+    Anim.Tween(self.Open, { Value = collapsed and 0 or 1 }, duration,"Out")
+    Anim.Tween(self.Chevron, { Rotation = collapsed and -90 or 0 }, duration,"Out")
 end
 
 function Float.Build()
@@ -4845,16 +5071,20 @@ function Notify.Build()
 end
 
 function Notify.Push(title, content, duration, kind)
+    kind=kind=="Warn" and "Warning" or (kind or "Info")
+    if not Notify.Record(title,content,kind or "Info") then return end
     local width = State.NotifyHost.Size.X.Offset - 8
     local text = Lang.Resolve(content or "")
     local textHeight = Layout.Measure(text, Fonts.Size("Desc", Util.TextSize("Desc") + 1), "Desc", width - 68).Y
     local height = math.max(58, textHeight + 44)
     local holder = Draw.New("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(width + 8, height + 4), ClipsDescendants = false, Parent = State.NotifyHost })
+    table.insert(Notify.Active,holder)
+    while #Notify.Active>4 do table.remove(Notify.Active,1):Destroy()end
     local card = Draw.New("TextButton", { Text = "", AutoButtonColor = false, BackgroundTransparency = 1, Position = UDim2.fromOffset(width + 60, 0), Size = UDim2.fromOffset(width, height), Parent = holder })
     Draw.Box("Frame", { Position = UDim2.fromOffset(4, 4), Size = UDim2.fromScale(1, 1), Parent = card }, "Shadow", nil, 12)
     local face = Draw.Box("Frame", { Size = UDim2.fromScale(1, 1), ClipsDescendants = true, Parent = card }, "Panel", "Outline", 12, 2)
     local royalIcons={Info="scroll",Success="shield",Warning="warning",Warn="warning",Error="warning",Coin="crown",Power="castle-gate"}
-    local icon = Sprite.New(face, (State.ThemeName=="Kingdom" and royalIcons or Notify.Icons)[kind or "Coin"] or "scroll", 28)
+    local icon = Sprite.New(face, (State.ThemeName=="Kingdom" and royalIcons or Notify.Icons)[kind or "Coin"] or "scroll", 22)
     local signal = kind=="Error" and "Danger" or kind=="Warning" and "Coin" or kind=="Success" and "Good" or "Accent"
     Draw.Box("Frame",{Name="NoticeRibbon",Position=UDim2.fromOffset(0,8),Size=UDim2.new(0,3,1,-16),Parent=face},signal)
     if State.ThemeName=="Kingdom" then
@@ -4875,10 +5105,10 @@ function Notify.Push(title, content, duration, kind)
     end
     local closed = false
     local function Dismiss()
-        if closed then
-            return
-        end
+        if closed or not holder.Parent then return end
         closed = true
+        local index=table.find(Notify.Active,holder)
+        if index then table.remove(Notify.Active,index)end
         local slide = Anim.Tween(card, { Position = UDim2.fromOffset(width + 60, 0) }, 0.22, "In")
         slide.Completed:Once(function()
             local collapse = Anim.Tween(holder, { Size = UDim2.fromOffset(width + 8, 0) }, 0.16)
@@ -6413,6 +6643,7 @@ end
 function Window:AddSettingsTab()
     local tab = self:AddTab(Lang.Strings.Settings, "gear", Lang.Strings.SettingsDesc)
     local interface = tab:AddLeftGroupbox(Lang.Strings.Interface, "settings-sliders")
+    interface:AddToggle("PixelCompactMode", {Text={EN="Compact layout",ID="Layout compact",TH="หน้าต่างแบบกะทัดรัด"},Default=State.CompactMode,Callback=function(value)Library:SetCompactMode(value)end})
     interface:AddDropdown("MarioLanguage", {
         Text = Lang.Strings.Language,
         Values = { "English", "Indonesia", "ไทย" },
@@ -6568,6 +6799,7 @@ function Library:CreateWindow(options)
         language = locale == "th" and "TH" or locale == "id" and "ID" or "EN"
     end
     State.Language = Lang.LanguageNames[language] and language or "EN"
+    State.CompactMode = options.Compact ~= false
     State.UserScale = math.clamp(tonumber(options.Scale) or 0.8, Config.ScaleRange.Min, Config.ScaleRange.Max)
     Theme.Apply(options.Theme or "Kingdom")
     Particles.Enabled = options.Particles == true
@@ -6653,6 +6885,29 @@ function Library:CreateWindow(options)
         Open()
     end
     return window
+end
+
+function Library:SetCompactMode(enabled)
+    State.CompactMode=enabled==true
+    for container in pairs(Layout.All) do
+        if container.Window==self.Window then
+            container.RegularGap=container.RegularGap or container.GapY
+            container.GapY=State.CompactMode and math.max(4,container.RegularGap-4) or container.RegularGap
+            container:MarkDirty()
+        end
+    end
+    if self.Window then self.Window:ApplyLayout() end
+    for _,control in pairs(self.Options) do
+        local row=control.Row
+        if row and row.ControlHeight then
+            if control.Type=="Input" or control.Type=="Dropdown" then row.ControlHeight=Util.Metric("Box") end
+            if control.Type=="Slider" then row.ControlHeight=Util.Metric("Knob")+4 end
+        end
+    end
+    Layout.MarkAll()
+    local option=self.Options.PixelCompactMode
+    if option and option.Value~=State.CompactMode then option.Value=State.CompactMode;option:Render() end
+    Configs.QueueAutoSave()
 end
 
 function Library:SetLanguage(code)
@@ -6804,6 +7059,8 @@ function Library:Unload()
     table.clear(State.Connections)
     table.clear(State.KeyPickers)
     table.clear(State.Tasks)
+    table.clear(Notify.History)
+    table.clear(Notify.Active)
     for tween in pairs(Anim.Loops) do tween:Cancel() end
     table.clear(Anim.Loops)
     for _, entry in ipairs(Particles.Pool) do if entry.Tween then entry.Tween:Cancel() end end
