@@ -3464,7 +3464,8 @@ local function BuildInterface()
         Language = "EN",
         Scale = 0.8,
         AutoSave = true,
-        Theme = "Studio",
+        Theme = "Kingdom",
+        BrandIcon = "crown",
         AnimationIntensity = "Normal",
         AllOff = AllOff,
         OnUnlocked = function()
