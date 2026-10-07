@@ -269,6 +269,17 @@ for index, name in ipairs({ "Arcade", "Daylight", "Midnight", "Forest", "Sunset"
     table.insert(Themes.Order, index, name)
 end
 
+Themes.Kingdom = ArcadePalette("D6B56D", "171A20", "282C33", "20242B")
+for token, hex in pairs({Element="30353D", Hover="3B414A", Track="424852", Outline="111418", Shadow="0C0E12",
+    Text="F3ECDD", SubText="C0B9AB", Muted="92938F", TopbarText="F3ECDD", SidebarText="E8DFCC",
+    AccentDark="8B693D", Coin="D6B56D", CoinDark="8B693D", Ink="201C16", Knob="F5EAD1",
+    Good="A2C1A2", GoodDark="5C795D", Blue="9CADBF", BlueDark="60748A", Danger="D98D87", DangerDark="934E4D",
+    Brick="7C4149", BrickDark="492A31", Grass="A2C1A2", GrassDark="5C795D"}) do
+    Themes.Kingdom[token] = rgb(hex)
+end
+Themes.Kingdom.Decor = "Kingdom"
+table.insert(Themes.Order, 1, "Kingdom")
+
 local State = {
     Gui = nil,
     Overlay = nil,
@@ -277,7 +288,7 @@ local State = {
     Drag = nil,
     Binding = nil,
     MenuKey = "LeftControl",
-    ThemeName = "Arcade",
+    ThemeName = "Kingdom",
     Language = "EN",
     UserScale = 0.8,
     Touch = false,
@@ -731,7 +742,7 @@ end
 
 function Theme.Apply(name)
     if name == "Order" or name == "Shared" or not Themes[name] then
-        name = "Arcade"
+        name = "Kingdom"
     end
     local palette = Themes[name]
     State.ThemeName = name
@@ -3791,7 +3802,7 @@ function Window:BuildTopbar()
     local left = Draw.New("Frame", { BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 0), Size = UDim2.new(1, -(controlsWidth+22), 1, -3), ClipsDescendants=true, ZIndex = 4, Parent = topbar })
     Draw.List(left, 8, true, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
     self.Emblem = Draw.New("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(22, 22), Parent = left })
-    if self.BrandIcon then Sprite.New(self.Emblem,self.BrandIcon,22) else Mascot.Build(self.Emblem) end
+    if self.BrandIcon or State.ThemeName=="Kingdom" then Sprite.New(self.Emblem,self.BrandIcon or "crown",22) else Mascot.Build(self.Emblem) end
     Util.Every(4, function()
         if self.Visible and not self.Minimized and not State.ReduceMotion and State.AnimationIntensity ~= "Low" then
             if Mascot.Sprite then Anim.Bump(Mascot.Sprite, 2) end
@@ -4046,7 +4057,7 @@ function Window:SetDrawer(open)
 end
 
 function Window:ApplyAccent()
-    local token = State.ThemeName=="Field" and "Accent" or (self.ActiveTab and self.ActiveTab.ColorToken or "Accent")
+    local token = (State.ThemeName=="Field" or State.ThemeName=="Kingdom") and "Accent" or (self.ActiveTab and self.ActiveTab.ColorToken or "Accent")
     for instance, map in pairs(Theme.Bound) do
         if instance:IsDescendantOf(self.Main) then
             for property, original in pairs(map) do
@@ -4355,7 +4366,7 @@ function Window:SelectTab(tab)
     self:RevealBlockTab()
     Anim.Reveal(tab)
     Anim.Bump(tab.IconSlot, 3)
-    Theme.Bind(self.HeaderTitle, { TextColor3 = State.ThemeName=="Field" and "Text" or tab.ColorToken })
+    Theme.Bind(self.HeaderTitle, { TextColor3 = State.ThemeName=="Kingdom" and "Accent" or (State.ThemeName=="Field" and "Text" or tab.ColorToken) })
     Lang.Bind(self.HeaderTitle, tab.Name)
     Lang.Bind(self.HeaderDesc, tab.Description or "")
     local titleY = self.HeaderDesc.Visible and 10 or 11
@@ -4534,8 +4545,10 @@ function Tab:RenderButton(instant)
     local duration = instant and 0 or Config.Tween.Normal
     if self.Window.Navigation=="Chunky" then
         Theme.Bind(self.Face,{BackgroundColor3=active and "Hover" or (self.Hovered and "Element" or "Panel")})
-        Theme.Bind(self.Label,{TextColor3=active and self.ColorToken or "SubText"})
-        Theme.Bind(self.Stroke,{Color=active and self.ColorToken or "Outline"})
+        local accent = State.ThemeName=="Kingdom" and "Accent" or self.ColorToken
+        Theme.Bind(self.Label,{TextColor3=active and accent or "SubText"})
+        Theme.Bind(self.Stroke,{Color=active and accent or "Outline"})
+        Theme.Bind(self.Marker,{BackgroundColor3=accent})
         self.Marker.Visible=active
         Anim.Tween(self.Face,{Position=UDim2.fromOffset(0,self.Pressed and 2 or (self.Hovered and -1 or 0))},duration)
         return
@@ -4840,7 +4853,15 @@ function Notify.Push(title, content, duration, kind)
     local card = Draw.New("TextButton", { Text = "", AutoButtonColor = false, BackgroundTransparency = 1, Position = UDim2.fromOffset(width + 60, 0), Size = UDim2.fromOffset(width, height), Parent = holder })
     Draw.Box("Frame", { Position = UDim2.fromOffset(4, 4), Size = UDim2.fromScale(1, 1), Parent = card }, "Shadow", nil, 12)
     local face = Draw.Box("Frame", { Size = UDim2.fromScale(1, 1), ClipsDescendants = true, Parent = card }, "Panel", "Outline", 12, 2)
-    local icon = Sprite.New(face, Notify.Icons[kind or "Coin"] or "crystal", 32)
+    local royalIcons={Info="scroll",Success="shield",Warning="warning",Warn="warning",Error="warning",Coin="crown",Power="castle-gate"}
+    local icon = Sprite.New(face, (State.ThemeName=="Kingdom" and royalIcons or Notify.Icons)[kind or "Coin"] or "scroll", 28)
+    local signal = kind=="Error" and "Danger" or kind=="Warning" and "Coin" or kind=="Success" and "Good" or "Accent"
+    Draw.Box("Frame",{Name="NoticeRibbon",Position=UDim2.fromOffset(0,8),Size=UDim2.new(0,3,1,-16),Parent=face},signal)
+    if State.ThemeName=="Kingdom" then
+        for _,x in ipairs({8,width-12}) do
+            Draw.Box("Frame",{Name="NoticeRivet",Position=UDim2.fromOffset(x,5),Size=UDim2.fromOffset(3,3),Parent=face},"Coin")
+        end
+    end
     icon.Position = UDim2.fromOffset(12, 11)
     Draw.Text({ Position = UDim2.fromOffset(58, 9), Size = UDim2.new(1, -68, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd, Parent = face }, "Body", Util.TextSize("Group"), "Text", title or "PixeL UI")
     Draw.Text({ Text = text, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, Position = UDim2.fromOffset(58, 29), Size = UDim2.new(1, -68, 0, textHeight), Parent = face }, "Desc", Util.TextSize("Desc") + 1, "SubText")
@@ -4848,8 +4869,10 @@ function Notify.Push(title, content, duration, kind)
     duration = duration or Config.Notify.Duration
     Anim.Tween(card, { Position = UDim2.fromOffset(0, 0) }, Config.Tween.Notify, "Back")
     TweenService:Create(timer, TweenInfo.new(duration, Enum.EasingStyle.Linear), { Size = UDim2.new(0, 0, 0, 4) }):Play()
-    Anim.Bump(icon, 6)
-    Anim.Burst(face, UDim2.fromOffset(30, 28), kind == "Error" and "Danger" or "Coin")
+    Anim.Bump(icon, State.ThemeName=="Kingdom" and 2 or 6)
+    if State.ThemeName~="Kingdom" then
+        Anim.Burst(face, UDim2.fromOffset(30, 28), kind == "Error" and "Danger" or "Coin")
+    end
     local closed = false
     local function Dismiss()
         if closed then
@@ -4891,16 +4914,17 @@ function Intro.Show(settings,screen)
     settings.StartTime=os.clock()
     Anim.Tween(screen,{BackgroundTransparency=0.3},0.25)
     local card,scene,scale=Intro.BuildCard(screen)
-    Intro.BuildScenery(scene,settings)
+    local scenery = Intro.BuildScenery(scene,settings)
     Draw.Text({Text=settings.Title or "PixeL UI",Position=UDim2.fromOffset(20,102),Size=UDim2.new(1,-40,0,34),TextXAlignment=Enum.TextXAlignment.Center,Parent=scene},"Logo",28,"Text")
     Draw.Text({Position=UDim2.fromOffset(20,140),Size=UDim2.new(1,-40,0,18),TextXAlignment=Enum.TextXAlignment.Center,TextTruncate=Enum.TextTruncate.AtEnd,Parent=scene},"Desc",12,"SubText",settings.SubTitle or "Jeaneism · 0x4.me")
     local track=Intro.Track(scene)
+    if State.ThemeName=="Kingdom" then track.Kingdom = scenery end
     Anim.Tween(scale,{Scale=Intro.FitScale(State.Gui.AbsoluteSize)},0.25,"Out")
     task.wait(0.25)
     Intro.RunSteps(settings,track)
     if Library.Unloaded then return end
     Intro.SetPhase(track,4,true)
-    Lang.Bind(track.Status,{EN="Your workspace is ready",ID="Ruang kerjamu siap",TH="พื้นที่ทำงานพร้อมแล้ว"})
+    Lang.Bind(track.Status,State.ThemeName=="Kingdom" and {EN="The gates are open",ID="Gerbang sudah terbuka",TH="ประตูเปิดแล้ว"} or {EN="Your workspace is ready",ID="Ruang kerjamu siap",TH="พื้นที่ทำงานพร้อมแล้ว"})
     task.wait(0.25)
     Anim.Tween(card,{GroupTransparency=1},0.25)
     Anim.Tween(screen,{BackgroundTransparency=1},0.25)
@@ -4908,7 +4932,7 @@ function Intro.Show(settings,screen)
 end
 
 function Intro.BuildCard(screen)
-    local card=Draw.New("CanvasGroup",{Name="PixelStudioOpening",AnchorPoint=Vector2.new(0.5,0.5),Position=UDim2.fromScale(0.5,0.5),Size=UDim2.fromOffset(Intro.Width+6,Intro.Height+6),BackgroundTransparency=1,Parent=screen})
+    local card=Draw.New("CanvasGroup",{Name=State.ThemeName=="Kingdom" and "PixelKingdomOpening" or "PixelStudioOpening",AnchorPoint=Vector2.new(0.5,0.5),Position=UDim2.fromScale(0.5,0.5),Size=UDim2.fromOffset(Intro.Width+6,Intro.Height+6),BackgroundTransparency=1,Parent=screen})
     local target=Intro.FitScale(State.Gui.AbsoluteSize)
     local scale=Draw.New("UIScale",{Scale=target*0.94,Parent=card})
     Draw.Box("Frame",{Position=UDim2.fromOffset(4,4),Size=UDim2.fromOffset(Intro.Width,Intro.Height),Parent=card},"Shadow",nil,10)
@@ -4919,6 +4943,7 @@ function Intro.BuildCard(screen)
 end
 
 function Intro.BuildScenery(scene,settings)
+    if State.ThemeName=="Kingdom" then return Intro.BuildKingdom(scene) end
     local mark=Draw.Box("Frame",{Name="OriginalPixelMonogram",AnchorPoint=Vector2.new(0.5,0),Position=UDim2.new(0.5,0,0,34),Size=UDim2.fromOffset(58,58),Parent=scene},"Panel",nil,9)
     local pixels={"1111100","1100110","1100110","1111100","1100000","1100000","1100000"}
     local stepX,stepY,insetX=5,6,11
@@ -4940,6 +4965,35 @@ function Intro.BuildScenery(scene,settings)
     end
     Draw.Box("Frame",{Position=UDim2.new(1,-5,1,-5),Size=UDim2.fromOffset(7,7),Parent=mark},"Coin",nil,1)
     return mark
+end
+
+function Intro.BuildKingdom(scene)
+    local castle=Draw.New("Frame",{Name="KingdomCastle",BackgroundTransparency=1,Position=UDim2.new(0.5,-104,0,27),Size=UDim2.fromOffset(208,70),Parent=scene})
+    local wall=Draw.Box("Frame",{Position=UDim2.fromOffset(40,25),Size=UDim2.fromOffset(128,42),Parent=castle},"Element","Outline",0,2)
+    for _,x in ipairs({18,158}) do
+        local tower=Draw.Box("Frame",{Name="CastleTower",Position=UDim2.fromOffset(x,12),Size=UDim2.fromOffset(32,55),Parent=castle},"Hover","Outline",0,2)
+        for _,offset in ipairs({0,12,24}) do
+            Draw.Box("Frame",{Position=UDim2.fromOffset(offset,-7),Size=UDim2.fromOffset(8,10),Parent=tower},"Hover","Outline",0,1)
+        end
+        Draw.Box("Frame",{Position=UDim2.fromOffset(13,12),Size=UDim2.fromOffset(6,15),Parent=tower},"Shadow")
+        local banner=Draw.Box("Frame",{Name="CastleBanner",Position=UDim2.fromOffset(7,33),Size=UDim2.fromOffset(18,15),Parent=tower},"Brick")
+        Draw.Box("Frame",{Position=UDim2.fromOffset(7,2),Size=UDim2.fromOffset(4,8),Parent=banner},"Coin")
+        if not State.ReduceMotion then Anim.Tween(banner,{Rotation=x<100 and -3 or 3},1.1,"Sine",2,true) end
+    end
+    for _,y in ipairs({8,20,32}) do
+        Draw.Box("Frame",{Position=UDim2.fromOffset(3,y),Size=UDim2.new(1,-6,0,1),Parent=wall},"Track")
+    end
+    local entrance=Draw.Box("Frame",{Name="CastleEntrance",Position=UDim2.fromOffset(83,33),Size=UDim2.fromOffset(42,34),ClipsDescendants=true,Parent=castle},"Shadow","CoinDark",0,1)
+    local left=Draw.Box("Frame",{Name="GateLeft",Size=UDim2.new(0.5,0,1,0),Parent=entrance},"BrickDark","Outline",0,1)
+    local right=Draw.Box("Frame",{Name="GateRight",Position=UDim2.fromScale(0.5,0),Size=UDim2.new(0.5,0,1,0),Parent=entrance},"BrickDark","Outline",0,1)
+    for _,door in ipairs({left,right}) do
+        Draw.Box("Frame",{Position=UDim2.new(0,2,0.3,0),Size=UDim2.new(1,-4,0,2),Parent=door},"CoinDark")
+        Draw.Box("Frame",{Position=UDim2.new(0,2,0.7,0),Size=UDim2.new(1,-4,0,2),Parent=door},"CoinDark")
+    end
+    local crest=Sprite.New(castle,"crown",20)
+    crest.Name="RoyalCrest";crest.Position=UDim2.fromOffset(94,8)
+    Draw.Box("Frame",{Position=UDim2.fromOffset(12,68),Size=UDim2.fromOffset(184,2),Parent=castle},"CoinDark")
+    return {Root=castle,Left=left,Right=right,Opened=false}
 end
 
 function Intro.Track(scene)
@@ -4965,6 +5019,12 @@ function Intro.Track(scene)
 end
 
 function Intro.SetPhase(track,index,complete)
+    local kingdom = track.Kingdom
+    if kingdom and not kingdom.Opened and (index>=4 or complete) then
+        kingdom.Opened=true
+        Anim.Tween(kingdom.Left,{Position=UDim2.fromScale(-0.5,0)},0.65,"Out")
+        Anim.Tween(kingdom.Right,{Position=UDim2.fromScale(1,0)},0.65,"Out")
+    end
     for i,phase in ipairs(track.Phases or {}) do
         local token=(complete or i<index) and "Good" or (i==index and "Accent" or "Muted")
         Theme.Bind(phase.Dot,{BackgroundColor3=token})
@@ -6286,6 +6346,11 @@ function Configs.StartAutoSave(name)
             return false, reason
         end
     end
+    local revision = Library.Options.PixelKingdomRevision
+    if Configs.KingdomDefault and revision and revision.Value ~= "kingdom-1" then
+        Library:SetTheme("Kingdom")
+        revision.Value = "kingdom-1"
+    end
     local linked, reason = Configs.SetAutoload(chosen)
     if not linked then
         Library:Notify("PixeL UI", "Autosave unavailable: " .. tostring(reason), 5, "Warning")
@@ -6504,7 +6569,7 @@ function Library:CreateWindow(options)
     end
     State.Language = Lang.LanguageNames[language] and language or "EN"
     State.UserScale = math.clamp(tonumber(options.Scale) or 0.8, Config.ScaleRange.Min, Config.ScaleRange.Max)
-    Theme.Apply(options.Theme or "Studio")
+    Theme.Apply(options.Theme or "Kingdom")
     Particles.Enabled = options.Particles == true
     Assets.Configure(Config.DefaultAssets)
     Assets.Configure(options.Assets)
@@ -6527,6 +6592,10 @@ function Library:CreateWindow(options)
     Watermark.Build(options.WatermarkTitle or window.Title)
     Watermark.SetVisible(options.Watermark == true)
     Configs.SetFolder(options.ConfigFolder or (not options.Title and "Mario Hub" or window.Title))
+    Configs.KingdomDefault = (options.Theme or "Kingdom") == "Kingdom"
+    if Configs.KingdomDefault then
+        self.Options.PixelKingdomRevision={Type="Input",Value="",Serialize=function(option)return option.Value end,Deserialize=function(option,value)option.Value=tostring(value or "")end}
+    end
     local function Build()
         if Library.Unloaded then
             return
